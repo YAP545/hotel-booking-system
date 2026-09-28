@@ -11,9 +11,9 @@ import { PaymentMethod, BookingStatus, UserRole } from '../common/enums';
 
 describe('PaymentsService', () => {
   let service: PaymentsService;
-  let razorpayService: RazorpayService;
   let fakeManager: any;
   let reservationRecord: any;
+  let mockRazorpayService: any;
 
   beforeEach(async () => {
     reservationRecord = {
@@ -39,10 +39,30 @@ describe('PaymentsService', () => {
       }),
     };
 
+    mockRazorpayService = {
+      isConfiguredStatus: jest.fn().mockReturnValue(true),
+      createOrder: jest.fn().mockImplementation((reservationId, amount) =>
+        Promise.resolve({
+          id: 'order_test_123',
+          entity: 'order',
+          amount: Math.round(amount * 100),
+          currency: 'INR',
+          keyId: 'rzp_test_key',
+          receipt: `receipt_${reservationId}`,
+          status: 'created',
+        }),
+      ),
+      verifySignature: jest
+        .fn()
+        .mockImplementation(
+          (orderId, paymentId, signature) => signature === 'valid_test_signature',
+        ),
+    };
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         PaymentsService,
-        RazorpayService,
+        { provide: RazorpayService, useValue: mockRazorpayService },
         { provide: getRepositoryToken(Payment), useValue: {} },
         {
           provide: getDataSourceToken(),
@@ -62,7 +82,6 @@ describe('PaymentsService', () => {
     }).compile();
 
     service = moduleRef.get(PaymentsService);
-    razorpayService = moduleRef.get(RazorpayService);
   });
 
   it('accepts a payment within the outstanding balance', async () => {
@@ -93,12 +112,12 @@ describe('PaymentsService', () => {
   });
 
   describe('Razorpay Integration', () => {
-    it('creates a Razorpay order for outstanding balance', async () => {
+    it('creates a Razorpay order for outstanding balance when configured', async () => {
       const order = await service.createRazorpayOrder(
         { reservationId: 'res-1' },
         { id: 'cust-1', email: 'customer@example.com', role: UserRole.CUSTOMER },
       );
-      expect(order.orderId).toBeDefined();
+      expect(order.orderId).toBe('order_test_123');
       expect(order.amount).toBe(100000); // 1000 INR = 100000 paise
       expect(order.outstandingAmount).toBe(1000);
     });
@@ -115,7 +134,7 @@ describe('PaymentsService', () => {
     it('verifies valid HMAC signature and records payment', async () => {
       const orderId = 'order_test_123';
       const paymentId = 'pay_test_456';
-      const signature = razorpayService.generateTestSignature(orderId, paymentId);
+      const signature = 'valid_test_signature';
 
       const payment = await service.verifyAndRecordRazorpayPayment(
         {
@@ -141,6 +160,18 @@ describe('PaymentsService', () => {
             razorpayPaymentId: 'pay_test_456',
             razorpaySignature: 'invalid_forged_signature',
           },
+          { id: 'cust-1', email: 'customer@example.com', role: UserRole.CUSTOMER },
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws explicit error when Razorpay is not configured (Requirement 3)', async () => {
+      mockRazorpayService.createOrder.mockRejectedValueOnce(
+        new BadRequestException('Razorpay not configured.'),
+      );
+      await expect(
+        service.createRazorpayOrder(
+          { reservationId: 'res-1' },
           { id: 'cust-1', email: 'customer@example.com', role: UserRole.CUSTOMER },
         ),
       ).rejects.toThrow(BadRequestException);

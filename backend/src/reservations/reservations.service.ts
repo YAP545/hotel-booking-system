@@ -387,6 +387,17 @@ export class ReservationsService {
         throw new BadRequestException('A completed stay cannot be cancelled.');
       }
 
+      // Calculate money actually paid for this booking (sum of PAID + PARTIAL)
+      const { sum: paidSum } = await manager
+        .createQueryBuilder(Payment, 'p')
+        .select('COALESCE(SUM(p.amount), 0)', 'sum')
+        .where('p.reservation_id = :reservationId', { reservationId: reservation.id })
+        .andWhere('p.payment_status IN (:...statuses)', {
+          statuses: [PaymentStatus.PAID, PaymentStatus.PARTIAL],
+        })
+        .getRawOne();
+      const totalPaid = Number(paidSum || 0);
+
       const settings = await this.getSettings();
       const hoursUntilCheckIn =
         (new Date(reservation.checkInDate).getTime() - Date.now()) / (1000 * 60 * 60);
@@ -397,7 +408,10 @@ export class ReservationsService {
           ((Number(reservation.totalAmount) * Number(settings.cancellationFeePercent)) / 100).toFixed(2),
         );
       }
-      const refundAmount = Number((Number(reservation.totalAmount) - fee).toFixed(2));
+
+      // Compute refund = max(0, min(totalPaid - fee, totalPaid))
+      const rawRefund = totalPaid - fee;
+      const refundAmount = Number(Math.max(0, Math.min(rawRefund, totalPaid)).toFixed(2));
 
       reservation.bookingStatus = BookingStatus.CANCELLED;
       await manager.save(reservation);
@@ -412,7 +426,8 @@ export class ReservationsService {
       });
       await manager.save(cancellation);
 
-      if (refundAmount > 0) {
+      // Create a REFUNDED payment record ONLY if refundAmount > 0 and totalPaid > 0
+      if (refundAmount > 0 && totalPaid > 0) {
         const refundPayment = manager.create(Payment, {
           reservationId: reservation.id,
           amount: refundAmount,
@@ -423,6 +438,7 @@ export class ReservationsService {
         });
         await manager.save(refundPayment);
       }
+
 
 
       // Free up the room if it was held for this booking and isn't mid-stay

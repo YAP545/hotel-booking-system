@@ -42,16 +42,19 @@ export class ReportsService {
 
     const { sum: todaysRevenue } = await this.paymentsRepo
       .createQueryBuilder('p')
-      .select('COALESCE(SUM(p.amount), 0)', 'sum')
+      .select(
+        "COALESCE(SUM(CASE WHEN p.payment_status IN ('PAID', 'PARTIAL') THEN p.amount WHEN p.payment_status = 'REFUNDED' THEN -p.amount ELSE 0 END), 0)",
+        'sum',
+      )
       .where('DATE(p.paid_at) = :today', { today })
       .getRawOne();
 
-    const { sum: totalRoomRevenue } = await this.reservationsRepo
-      .createQueryBuilder('r')
-      .select('COALESCE(SUM(r.subtotal), 0)', 'sum')
-      .where('r.booking_status IN (:...statuses)', {
-        statuses: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN, BookingStatus.CHECKED_OUT],
-      })
+    const { sum: totalRoomRevenue } = await this.paymentsRepo
+      .createQueryBuilder('p')
+      .select(
+        "COALESCE(SUM(CASE WHEN p.payment_status IN ('PAID', 'PARTIAL') THEN p.amount WHEN p.payment_status = 'REFUNDED' THEN -p.amount ELSE 0 END), 0)",
+        'sum',
+      )
       .getRawOne();
 
     const occupiedNightsRaw = await this.reservationsRepo
@@ -67,11 +70,14 @@ export class ReportsService {
     const adr = Number((roomRev / totalOccupiedNights).toFixed(2));
     const revpar = Number((roomRev / Math.max(totalRooms, 1)).toFixed(2));
 
-    // Revenue over the last 14 days
+    // Revenue over the last 14 days (Net = PAID + PARTIAL - REFUNDED)
     const revenueSeries = await this.paymentsRepo
       .createQueryBuilder('p')
       .select('DATE(p.paid_at)', 'date')
-      .addSelect('SUM(p.amount)', 'total')
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN p.payment_status IN ('PAID', 'PARTIAL') THEN p.amount WHEN p.payment_status = 'REFUNDED' THEN -p.amount ELSE 0 END), 0)",
+        'total',
+      )
       .where('p.paid_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)')
       .groupBy('DATE(p.paid_at)')
       .orderBy('date', 'ASC')
@@ -157,7 +163,10 @@ export class ReportsService {
     return this.paymentsRepo
       .createQueryBuilder('p')
       .select('DATE(p.paid_at)', 'date')
-      .addSelect('SUM(p.amount)', 'total')
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN p.payment_status IN ('PAID', 'PARTIAL') THEN p.amount WHEN p.payment_status = 'REFUNDED' THEN -p.amount ELSE 0 END), 0)",
+        'total',
+      )
       .where('DATE(p.paid_at) BETWEEN :fromDate AND :toDate', { fromDate, toDate })
       .groupBy('DATE(p.paid_at)')
       .orderBy('date', 'ASC')
@@ -222,11 +231,15 @@ export class ReportsService {
       .createQueryBuilder('p')
       .select('p.payment_method', 'method')
       .addSelect('COUNT(*)', 'count')
-      .addSelect('SUM(p.amount)', 'total')
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN p.payment_status IN ('PAID', 'PARTIAL') THEN p.amount WHEN p.payment_status = 'REFUNDED' THEN -p.amount ELSE 0 END), 0)",
+        'total',
+      )
       .where('DATE(p.paid_at) BETWEEN :fromDate AND :toDate', { fromDate, toDate })
       .groupBy('p.payment_method')
       .getRawMany();
   }
+
 
   async exportRevenueCsv(fromDate: string, toDate: string): Promise<string> {
     const data = await this.revenue(fromDate, toDate);
