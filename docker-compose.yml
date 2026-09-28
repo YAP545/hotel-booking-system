@@ -64,14 +64,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-rzp_test_placeholder_key}
+        VITE_HOTEL_UPI_VPA: ${VITE_HOTEL_UPI_VPA:-}
     container_name: hotel_frontend
-    env_file:
-      - ./frontend/.env
     ports:
       - "5173:80"
-    environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
-      VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-rzp_test_placeholder_key}
     depends_on:
       - backend
 
