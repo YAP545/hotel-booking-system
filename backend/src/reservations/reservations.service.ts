@@ -265,7 +265,9 @@ export class ReservationsService {
         .createQueryBuilder(Reservation, 'r')
         .where('DATE(r.created_at) = CURDATE()')
         .getCount();
-      const bookingReference = generateBookingReference(todaysCount);
+      const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const bookingReference = `${generateBookingReference(todaysCount)}-${randSuffix}`;
+
 
       const reservation = manager.create(Reservation, {
         bookingReference,
@@ -306,6 +308,7 @@ export class ReservationsService {
 
       this.eventsGateway.broadcastBookingCreated(reservation);
       this.emailService.sendBookingConfirmation({ ...reservation, guest });
+      reservation.guest = guest;
       return reservation;
     });
   }

@@ -47,9 +47,10 @@ export class AuthService {
       name: dto.name,
       email: dto.email,
       passwordHash,
-      role: dto.role || UserRole.CUSTOMER,
+      role: UserRole.CUSTOMER,
       phone: dto.phone,
     });
+
     await this.usersRepo.save(user);
 
     const { accessToken, refreshToken } = await this.generateTokens(user);

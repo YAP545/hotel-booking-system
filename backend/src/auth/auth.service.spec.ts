@@ -108,5 +108,30 @@ describe('AuthService', () => {
       await expect(service.refreshToken('revoked-uuid')).rejects.toThrow(UnauthorizedException);
     });
   });
+
+  describe('register', () => {
+
+    it('forces every self-registered user to CUSTOMER role even if client passes role ADMIN', async () => {
+      usersRepo.findOne.mockResolvedValue(null);
+      usersRepo.create = jest.fn().mockImplementation((data) => ({ id: 'new-user-1', ...data }));
+      usersRepo.save = jest.fn().mockImplementation((data) => Promise.resolve(data));
+
+      const registerPayload: any = {
+        name: 'Attacker Admin',
+        email: 'attacker@example.com',
+        password: 'Password123!',
+        role: 'ADMIN',
+      };
+
+      const result = await service.register(registerPayload);
+      expect(result.user.role).toBe('CUSTOMER');
+      expect(usersRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          role: 'CUSTOMER',
+        }),
+      );
+    });
+  });
 });
+
 
