@@ -15,6 +15,7 @@ describe('PaymentsService', () => {
   let reservationRecord: any;
   let mockRazorpayService: any;
   let paymentsRepoMock: any;
+  let auditLogServiceMock: any;
 
   beforeEach(async () => {
     reservationRecord = {
@@ -80,6 +81,10 @@ describe('PaymentsService', () => {
       find: jest.fn().mockResolvedValue([]),
     };
 
+    auditLogServiceMock = {
+      log: jest.fn().mockResolvedValue(true),
+    };
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         PaymentsService,
@@ -92,7 +97,7 @@ describe('PaymentsService', () => {
             transaction: (cb: any) => cb(fakeManager),
           },
         },
-        { provide: AuditLogService, useValue: { log: jest.fn() } },
+        { provide: AuditLogService, useValue: auditLogServiceMock },
         {
           provide: EventsGateway,
           useValue: {
@@ -105,12 +110,20 @@ describe('PaymentsService', () => {
     service = moduleRef.get(PaymentsService);
   });
 
-  it('accepts a payment within the outstanding balance', async () => {
+  it('accepts a payment within the outstanding balance and writes an audit log entry', async () => {
     const result = await service.create(
       { reservationId: 'res-1', amount: 500, paymentMethod: PaymentMethod.CARD },
       { id: 'user-1', name: 'Reception' },
     );
     expect(result.amount).toBe(500);
+    expect(auditLogServiceMock.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'RECORD_PAYMENT',
+        entity: 'Payment',
+        entityId: 'payment-1',
+      }),
+      fakeManager,
+    );
   });
 
   it('rejects a payment that exceeds the outstanding balance (Rule 9)', async () => {
@@ -143,7 +156,7 @@ describe('PaymentsService', () => {
       expect(order.outstandingAmount).toBe(1000);
     });
 
-    it('creates a Razorpay QR Code for outstanding balance', async () => {
+    it('creates a Razorpay QR Code for outstanding balance for authorized customer', async () => {
       const qr = await service.createRazorpayQrCode(
         { reservationId: 'res-1' },
         { id: 'cust-1', email: 'customer@example.com', role: UserRole.CUSTOMER },
@@ -151,6 +164,15 @@ describe('PaymentsService', () => {
       expect(qr.id).toBe('qr_test_123');
       expect(qr.imageUrl).toBe('https://razorpay.com/qr/test.png');
       expect(qr.outstandingAmount).toBe(1000);
+    });
+
+    it('enforces booking ownership and prevents customer from creating QR code for another guest', async () => {
+      await expect(
+        service.createRazorpayQrCode(
+          { reservationId: 'res-1' },
+          { id: 'cust-2', email: 'other@example.com', role: UserRole.CUSTOMER },
+        ),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('prevents customer from creating order for another guest reservation', async () => {

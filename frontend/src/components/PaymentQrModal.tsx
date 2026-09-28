@@ -31,8 +31,15 @@ export function PaymentQrModal({ reservation, onClose, onPaymentSuccess }: Payme
   const canManage = user?.role === 'ADMIN' || user?.role === 'RECEPTIONIST';
 
   async function generateFallbackUpiQr(amount: number) {
+    const vpa = import.meta.env.VITE_HOTEL_UPI_VPA;
+    if (!vpa) {
+      setQrImageUrl(null);
+      setIsFallback(true);
+      setFallbackMessage('Razorpay QR Code API is unavailable and no fallback HOTEL_UPI_VPA is configured in environment.');
+      return;
+    }
+
     try {
-      const vpa = 'grandhotel@upi';
       const hotelName = 'Grand Hotel';
       const ref = reservation.bookingReference || reservation.id.slice(0, 8);
       const upiUrl = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(hotelName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(ref)}`;
@@ -168,9 +175,9 @@ export function PaymentQrModal({ reservation, onClose, onPaymentSuccess }: Payme
               </div>
             </div>
 
-            {isFallback && (
+            {isFallback && import.meta.env.VITE_HOTEL_UPI_VPA && (
               <p className="text-xs text-slate-500">
-                Scan with any UPI App (GPay, PhonePe, Paytm) using VPA <span className="font-semibold text-slate-700">grandhotel@upi</span>.
+                Scan with any UPI App (GPay, PhonePe, Paytm) using VPA <span className="font-semibold text-slate-700">{import.meta.env.VITE_HOTEL_UPI_VPA}</span>.
               </p>
             )}
 

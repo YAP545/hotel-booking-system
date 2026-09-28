@@ -238,6 +238,8 @@ Copy `.env.example` to `.env` in the `backend/` directory and configure the vari
 |---|---|---|---|
 | `POST` | `/api/payments` | `RECEPTIONIST`, `ADMIN` | Record manual cash or card payment |
 | `POST` | `/api/payments/razorpay/create-order` | Owned / Staff | Create Razorpay order for outstanding balance |
+| `POST` | `/api/payments/razorpay/create-qr` | Owned / Staff | Create Razorpay QR code for outstanding balance |
+| `POST` | `/api/payments/razorpay/webhook` | Public | Process Razorpay webhook event with HMAC verification & idempotency |
 | `POST` | `/api/payments/razorpay/verify` | Owned / Staff | Verify Razorpay payment signature & record payment |
 | `GET` | `/api/reports/dashboard` | `RECEPTIONIST`, `ADMIN` | Executive dashboard analytics & metrics |
 | `GET` | `/api/reports/revenue` | `ADMIN` | Revenue reports with net calculation (PAID minus REFUNDED) |
@@ -266,14 +268,15 @@ Copy `.env.example` to `.env` in the `backend/` directory and configure the vari
 
 ## 🧪 Testing & Verification
 
-Run the full NestJS unit test suite:
+Run the full NestJS unit test suite (**47 unit tests across 11 suites passing**):
 
 ```bash
 cd backend
 npm test
 ```
 
-**Test Suite Coverage**:
+**Test Suite Coverage (11 suites, 47 unit tests)**:
+- `payments.service.spec.ts` (Razorpay orders, QR code creation, HMAC webhook verification & idempotency)
 - `auth.service.spec.ts` (Forced CUSTOMER role on self-registration)
 - `customer-authorization.spec.ts` (Customer data isolation & endpoint protection)
 - `reservations.refund.spec.ts` (Unpaid, partial, full payment & fee refund calculations)
