@@ -25,6 +25,20 @@ export const paymentsService = {
     const { data } = await api.post<Payment>('/payments/razorpay/verify', payload);
     return data;
   },
+  async createRazorpayQr(reservationId: string) {
+    const { data } = await api.post<{
+      success?: boolean;
+      fallback?: boolean;
+      id?: string;
+      imageUrl?: string;
+      amount: number;
+      status?: string;
+      reservationId: string;
+      bookingReference?: string;
+      message?: string;
+    }>('/payments/razorpay/create-qr', { reservationId });
+    return data;
+  },
   async byReservation(reservationId: string): Promise<Payment[]> {
     const { data } = await api.get<Payment[]>('/payments', { params: { reservationId } });
     return data;

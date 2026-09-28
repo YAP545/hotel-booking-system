@@ -4,9 +4,10 @@ import { Reservation } from '../types';
 import { Card, EmptyState, ErrorState, LoadingState, PageHeader, PrimaryButton, SecondaryButton } from '../components/ui';
 import { BookingStatusBadge } from '../components/StatusBadges';
 import { apiErrorMessage } from '../services/api';
-import { Calendar, BedDouble, FileText, XCircle, CreditCard } from 'lucide-react';
+import { Calendar, BedDouble, FileText, XCircle, CreditCard, QrCode } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { initiateRazorpayPayment } from '../utils/razorpay';
+import { PaymentQrModal } from '../components/PaymentQrModal';
 
 
 export function MyBookingsPage() {
@@ -14,6 +15,7 @@ export function MyBookingsPage() {
   const [bookings, setBookings] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [qrModalReservation, setQrModalReservation] = useState<Reservation | null>(null);
 
   async function loadBookings() {
     setLoading(true);
@@ -97,27 +99,36 @@ export function MyBookingsPage() {
                   <p className="text-lg font-bold text-brand-700">₹{booking.totalAmount}</p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   { (booking.bookingStatus === 'CONFIRMED' || booking.bookingStatus === 'CHECKED_IN') && (
-                    <PrimaryButton
-                      onClick={() =>
-                        initiateRazorpayPayment({
-                          reservationId: booking.id,
-                          bookingReference: booking.bookingReference,
-                          guestName: booking.guest ? `${booking.guest.firstName} ${booking.guest.lastName}` : '',
-                          guestEmail: booking.guest?.email || '',
-                          guestPhone: booking.guest?.phone || '',
-                          onSuccess: () => {
-                            show('Payment processed successfully via Razorpay!', 'success');
-                            loadBookings();
-                          },
-                          onError: (err) => show(err, 'error'),
-                        })
-                      }
-                      className="bg-emerald-600 hover:bg-emerald-700 text-xs py-1.5"
-                    >
-                      <CreditCard className="h-3.5 w-3.5" /> Pay Online
-                    </PrimaryButton>
+                    <>
+                      <PrimaryButton
+                        onClick={() =>
+                          initiateRazorpayPayment({
+                            reservationId: booking.id,
+                            bookingReference: booking.bookingReference,
+                            guestName: booking.guest ? `${booking.guest.firstName} ${booking.guest.lastName}` : '',
+                            guestEmail: booking.guest?.email || '',
+                            guestPhone: booking.guest?.phone || '',
+                            onSuccess: () => {
+                              show('Payment processed successfully via Razorpay!', 'success');
+                              loadBookings();
+                            },
+                            onError: (err) => show(err, 'error'),
+                          })
+                        }
+                        className="bg-emerald-600 hover:bg-emerald-700 text-xs py-1.5"
+                      >
+                        <CreditCard className="h-3.5 w-3.5" /> Pay Online
+                      </PrimaryButton>
+
+                      <SecondaryButton
+                        onClick={() => setQrModalReservation(booking)}
+                        className="text-xs py-1.5 border-brand-300 text-brand-700 hover:bg-brand-50"
+                      >
+                        <QrCode className="h-3.5 w-3.5 text-brand-600" /> Pay via QR
+                      </SecondaryButton>
+                    </>
                   )}
 
                   {booking.bookingStatus === 'CONFIRMED' && (
@@ -137,6 +148,16 @@ export function MyBookingsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {qrModalReservation && (
+        <PaymentQrModal
+          reservation={qrModalReservation}
+          onClose={() => setQrModalReservation(null)}
+          onPaymentSuccess={() => {
+            loadBookings();
+          }}
+        />
       )}
     </div>
   );

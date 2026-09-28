@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, LogIn, LogOut, XCircle, CreditCard, FileText } from 'lucide-react';
+import { ArrowLeft, LogIn, LogOut, XCircle, CreditCard, FileText, QrCode } from 'lucide-react';
 import { reservationsService } from '../services/reservations.service';
 import { paymentsService, invoicesService } from '../services/misc.service';
 import { Reservation, Payment, PaymentMethod } from '../types';
@@ -11,6 +11,7 @@ import { useToast } from '../context/ToastContext';
 import { apiErrorMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { initiateRazorpayPayment } from '../utils/razorpay';
+import { PaymentQrModal } from '../components/PaymentQrModal';
 
 
 export function ReservationDetailPage() {
@@ -26,6 +27,7 @@ export function ReservationDetailPage() {
 
   const [showCancel, setShowCancel] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'RECEPTIONIST';
 
@@ -160,9 +162,14 @@ export function ReservationDetailPage() {
                 </SecondaryButton>
               )}
               {outstanding > 0 && reservation.bookingStatus !== 'CANCELLED' && (
-                <SecondaryButton onClick={() => setShowPayment(true)}>
-                  <CreditCard className="h-4 w-4" /> Record Payment
-                </SecondaryButton>
+                <>
+                  <SecondaryButton onClick={() => setShowPayment(true)}>
+                    <CreditCard className="h-4 w-4" /> Record Payment
+                  </SecondaryButton>
+                  <SecondaryButton onClick={() => setShowQrModal(true)} className="border-brand-300 text-brand-700 hover:bg-brand-50">
+                    <QrCode className="h-4 w-4 text-brand-600" /> Pay via QR
+                  </SecondaryButton>
+                </>
               )}
               {reservation.bookingStatus === 'CHECKED_OUT' && (
                 <Link to={`/invoices?reservationId=${reservation.id}`}>
@@ -203,6 +210,16 @@ export function ReservationDetailPage() {
           bookingReference={reservation.bookingReference}
           onClose={() => setShowPayment(false)}
           onSaved={() => { setShowPayment(false); load(); }}
+        />
+      )}
+      {showQrModal && (
+        <PaymentQrModal
+          reservation={reservation}
+          onClose={() => setShowQrModal(false)}
+          onPaymentSuccess={() => {
+            setShowQrModal(false);
+            load();
+          }}
         />
       )}
     </div>
