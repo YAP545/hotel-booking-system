@@ -30,3 +30,5 @@ scratch/
 temp/
 tmp/
 *.tmp
+*.tsbuildinfo
+
