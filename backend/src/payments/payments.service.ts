@@ -1,23 +1,37 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Payment } from './payment.entity';
 import { Reservation } from '../reservations/reservation.entity';
-import { PaymentStatus, BookingStatus, UserRole } from '../common/enums';
+import { PaymentStatus, BookingStatus, UserRole, PaymentMethod } from '../common/enums';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CreateRazorpayOrderDto, VerifyRazorpayPaymentDto } from './dto/razorpay-payment.dto';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { EventsGateway } from '../common/gateways/events.gateway';
+import { RazorpayService } from './services/razorpay.service';
 
 @Injectable()
-export class PaymentsService {
+export class PaymentsService implements OnModuleInit {
   constructor(
     @InjectRepository(Payment) private paymentsRepo: Repository<Payment>,
     @InjectDataSource() private dataSource: DataSource,
     private auditLog: AuditLogService,
     private eventsGateway: EventsGateway,
+    private razorpayService: RazorpayService,
   ) {}
 
+  async onModuleInit() {
+    try {
+      await this.dataSource.query(
+        "ALTER TABLE payments MODIFY COLUMN payment_method ENUM('CASH','CARD','UPI','BANK_TRANSFER','RAZORPAY') NOT NULL",
+      );
+    } catch {
+      // Safe fallback if table is not yet present or driver differs
+    }
+  }
+
   /** Total already paid (PAID + PARTIAL rows) for a reservation. */
+
   async totalPaid(reservationId: string, manager = this.dataSource.manager): Promise<number> {
     const { sum } = await manager
       .createQueryBuilder(Payment, 'p')
@@ -79,6 +93,84 @@ export class PaymentsService {
 
       return payment;
     });
+  }
+
+  async createRazorpayOrder(
+    dto: CreateRazorpayOrderDto,
+    currentUser: { id: string; email?: string; role?: UserRole },
+  ) {
+    const reservation = await this.dataSource.manager.findOne(Reservation, {
+      where: { id: dto.reservationId },
+      relations: ['guest'],
+    });
+    if (!reservation) throw new NotFoundException('Reservation not found.');
+
+    if (currentUser?.role === UserRole.CUSTOMER && reservation.guest?.email !== currentUser.email) {
+      throw new ForbiddenException('You do not have permission to pay for this reservation.');
+    }
+
+    if (reservation.bookingStatus === BookingStatus.CANCELLED) {
+      throw new BadRequestException('Cannot create payment order for a cancelled reservation.');
+    }
+
+    const outstanding = await this.outstandingBalance(dto.reservationId);
+    if (outstanding <= 0) {
+      throw new BadRequestException('This reservation is already fully paid.');
+    }
+
+    const order = await this.razorpayService.createOrder(dto.reservationId, outstanding);
+    return {
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: order.keyId,
+      reservationId: dto.reservationId,
+      outstandingAmount: outstanding,
+    };
+  }
+
+  async verifyAndRecordRazorpayPayment(
+    dto: VerifyRazorpayPaymentDto,
+    currentUser: { id: string; name?: string; email?: string; role?: UserRole },
+  ) {
+    const isValidSignature = this.razorpayService.verifySignature(
+      dto.razorpayOrderId,
+      dto.razorpayPaymentId,
+      dto.razorpaySignature,
+    );
+
+    if (!isValidSignature) {
+      throw new BadRequestException('Invalid Razorpay payment signature verification failed.');
+    }
+
+    const reservation = await this.dataSource.manager.findOne(Reservation, {
+      where: { id: dto.reservationId },
+      relations: ['guest'],
+    });
+    if (!reservation) throw new NotFoundException('Reservation not found.');
+
+    if (currentUser?.role === UserRole.CUSTOMER && reservation.guest?.email !== currentUser.email) {
+      throw new ForbiddenException('You do not have permission to pay for this reservation.');
+    }
+
+    if (reservation.bookingStatus === BookingStatus.CANCELLED) {
+      throw new BadRequestException('Cannot process payment for a cancelled booking.');
+    }
+
+    const outstanding = await this.outstandingBalance(dto.reservationId);
+    if (outstanding <= 0) {
+      throw new BadRequestException('Reservation is already fully paid.');
+    }
+
+    return this.create(
+      {
+        reservationId: dto.reservationId,
+        amount: outstanding,
+        paymentMethod: PaymentMethod.RAZORPAY,
+        transactionReference: dto.razorpayPaymentId,
+      },
+      { id: currentUser?.id || 'system', name: currentUser?.name || 'Customer' },
+    );
   }
 
   async findByReservation(

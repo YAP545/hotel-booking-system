@@ -103,7 +103,8 @@ export class InitialSchema1732600000000 implements MigrationInterface {
         id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
         reservation_id VARCHAR(36) NOT NULL,
         amount DECIMAL(10,2) NOT NULL,
-        payment_method ENUM('CASH','CARD','UPI','BANK_TRANSFER') NOT NULL,
+        payment_method ENUM('CASH','CARD','UPI','BANK_TRANSFER','RAZORPAY') NOT NULL,
+
         payment_status ENUM('PENDING','PARTIAL','PAID','REFUNDED') NOT NULL DEFAULT 'PAID',
         transaction_reference VARCHAR(100) NULL,
         paid_at DATETIME NULL,

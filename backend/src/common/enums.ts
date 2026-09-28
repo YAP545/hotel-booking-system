@@ -35,6 +35,7 @@ export enum PaymentMethod {
   CARD = 'CARD',
   UPI = 'UPI',
   BANK_TRANSFER = 'BANK_TRANSFER',
+  RAZORPAY = 'RAZORPAY',
 }
 
 export enum PaymentStatus {

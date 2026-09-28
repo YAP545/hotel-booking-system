@@ -12,11 +12,13 @@ import { Room } from '../rooms/room.entity';
 import { Guest } from '../guests/guest.entity';
 import { HotelSettings } from '../settings/hotel-settings.entity';
 import { Cancellation } from '../cancellations/cancellation.entity';
+import { Payment } from '../payments/payment.entity';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { SearchAvailabilityDto } from './dto/search-availability.dto';
 import { CancelReservationDto } from './dto/cancel-reservation.dto';
-import { ACTIVE_BOOKING_STATUSES, BookingStatus, CancellationStatus, RoomStatus, UserRole } from '../common/enums';
+import { ACTIVE_BOOKING_STATUSES, BookingStatus, CancellationStatus, RoomStatus, UserRole, PaymentMethod, PaymentStatus } from '../common/enums';
+
 import { generateBookingReference } from '../common/utils/booking-reference';
 import { dateRangesOverlap } from '../common/utils/date-overlap';
 import { AuditLogService } from '../common/services/audit-log.service';
@@ -409,6 +411,19 @@ export class ReservationsService {
         status: CancellationStatus.APPROVED,
       });
       await manager.save(cancellation);
+
+      if (refundAmount > 0) {
+        const refundPayment = manager.create(Payment, {
+          reservationId: reservation.id,
+          amount: refundAmount,
+          paymentMethod: PaymentMethod.BANK_TRANSFER,
+          paymentStatus: PaymentStatus.REFUNDED,
+          transactionReference: `REFUND-${reservation.bookingReference}`,
+          paidAt: new Date(),
+        });
+        await manager.save(refundPayment);
+      }
+
 
       // Free up the room if it was held for this booking and isn't mid-stay
       // for another guest.

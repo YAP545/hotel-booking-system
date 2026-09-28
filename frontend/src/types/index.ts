@@ -16,7 +16,8 @@ export type BookingStatus =
   | 'CANCELLED'
   | 'NO_SHOW';
 
-export type PaymentMethod = 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER';
+export type PaymentMethod = 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER' | 'RAZORPAY';
+
 export type PaymentStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'REFUNDED';
 
 export interface AuthUser {

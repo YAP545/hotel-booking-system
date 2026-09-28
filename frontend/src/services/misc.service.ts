@@ -5,6 +5,26 @@ export const paymentsService = {
   create(payload: { reservationId: string; amount: number; paymentMethod: PaymentMethod; transactionReference?: string }) {
     return api.post<Payment>('/payments', payload);
   },
+  async createRazorpayOrder(reservationId: string) {
+    const { data } = await api.post<{
+      orderId: string;
+      amount: number;
+      currency: string;
+      keyId: string;
+      reservationId: string;
+      outstandingAmount: number;
+    }>('/payments/razorpay/create-order', { reservationId });
+    return data;
+  },
+  async verifyRazorpayPayment(payload: {
+    reservationId: string;
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+  }) {
+    const { data } = await api.post<Payment>('/payments/razorpay/verify', payload);
+    return data;
+  },
   async byReservation(reservationId: string): Promise<Payment[]> {
     const { data } = await api.get<Payment[]>('/payments', { params: { reservationId } });
     return data;
@@ -14,6 +34,7 @@ export const paymentsService = {
     return data;
   },
 };
+
 
 export const invoicesService = {
   async byReservation(reservationId: string): Promise<Invoice> {

@@ -8,12 +8,16 @@ import { Invoice } from '../invoices/invoice.entity';
 import { Payment } from '../payments/payment.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
 import { AuditLogService } from '../common/services/audit-log.service';
-import { PaymentsService } from '../payments/payments.service';
+import { PaymentsModule } from '../payments/payments.module';
 import { EmailService } from '../common/services/email.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CheckOut, Reservation, Invoice, Payment, AuditLog])],
+  imports: [
+    TypeOrmModule.forFeature([CheckOut, Reservation, Invoice, Payment, AuditLog]),
+    PaymentsModule,
+  ],
   controllers: [CheckOutController],
-  providers: [CheckOutService, AuditLogService, PaymentsService, EmailService],
+  providers: [CheckOutService, AuditLogService, EmailService],
 })
 export class CheckOutModule {}
+

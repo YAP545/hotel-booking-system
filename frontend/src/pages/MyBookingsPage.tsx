@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { reservationsService } from '../services/reservations.service';
 import { Reservation } from '../types';
-import { Card, EmptyState, ErrorState, LoadingState, PageHeader, SecondaryButton } from '../components/ui';
+import { Card, EmptyState, ErrorState, LoadingState, PageHeader, PrimaryButton, SecondaryButton } from '../components/ui';
 import { BookingStatusBadge } from '../components/StatusBadges';
 import { apiErrorMessage } from '../services/api';
-import { Calendar, BedDouble, FileText, XCircle } from 'lucide-react';
+import { Calendar, BedDouble, FileText, XCircle, CreditCard } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { initiateRazorpayPayment } from '../utils/razorpay';
+
 
 export function MyBookingsPage() {
   const { show } = useToast();
@@ -96,17 +98,40 @@ export function MyBookingsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  { (booking.bookingStatus === 'CONFIRMED' || booking.bookingStatus === 'CHECKED_IN') && (
+                    <PrimaryButton
+                      onClick={() =>
+                        initiateRazorpayPayment({
+                          reservationId: booking.id,
+                          bookingReference: booking.bookingReference,
+                          guestName: booking.guest ? `${booking.guest.firstName} ${booking.guest.lastName}` : '',
+                          guestEmail: booking.guest?.email || '',
+                          guestPhone: booking.guest?.phone || '',
+                          onSuccess: () => {
+                            show('Payment processed successfully via Razorpay!', 'success');
+                            loadBookings();
+                          },
+                          onError: (err) => show(err, 'error'),
+                        })
+                      }
+                      className="bg-emerald-600 hover:bg-emerald-700 text-xs py-1.5"
+                    >
+                      <CreditCard className="h-3.5 w-3.5" /> Pay Online
+                    </PrimaryButton>
+                  )}
+
                   {booking.bookingStatus === 'CONFIRMED' && (
-                    <SecondaryButton onClick={() => handleCancel(booking.id)} className="text-red-600 hover:bg-red-50 border-red-200">
-                      <XCircle className="h-4 w-4" /> Cancel
+                    <SecondaryButton onClick={() => handleCancel(booking.id)} className="text-red-600 hover:bg-red-50 border-red-200 text-xs py-1.5">
+                      <XCircle className="h-3.5 w-3.5" /> Cancel
                     </SecondaryButton>
                   )}
 
                   {booking.bookingStatus === 'CHECKED_OUT' && (
-                    <SecondaryButton onClick={() => window.print()}>
-                      <FileText className="h-4 w-4" /> Receipt
+                    <SecondaryButton onClick={() => window.print()} className="text-xs py-1.5">
+                      <FileText className="h-3.5 w-3.5" /> Receipt
                     </SecondaryButton>
                   )}
+
                 </div>
               </div>
             </Card>

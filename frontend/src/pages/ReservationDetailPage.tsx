@@ -10,6 +10,8 @@ import { Modal, ConfirmDialog } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
 import { apiErrorMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { initiateRazorpayPayment } from '../utils/razorpay';
+
 
 export function ReservationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -195,6 +197,10 @@ export function ReservationDetailPage() {
         <RecordPaymentModal
           reservationId={reservation.id}
           outstanding={outstanding}
+          guestName={reservation.guest ? `${reservation.guest.firstName} ${reservation.guest.lastName}` : ''}
+          guestEmail={reservation.guest?.email || ''}
+          guestPhone={reservation.guest?.phone || ''}
+          bookingReference={reservation.bookingReference}
           onClose={() => setShowPayment(false)}
           onSaved={() => { setShowPayment(false); load(); }}
         />
@@ -221,22 +227,46 @@ function CancelBookingModal({ onClose, onConfirm }: { onClose: () => void; onCon
 function RecordPaymentModal({
   reservationId,
   outstanding,
+  guestName,
+  guestEmail,
+  guestPhone,
+  bookingReference,
   onClose,
   onSaved,
 }: {
   reservationId: string;
   outstanding: number;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  bookingReference?: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const { show } = useToast();
   const [amount, setAmount] = useState(outstanding.toFixed(2));
-  const [method, setMethod] = useState<PaymentMethod>('CARD');
+  const [method, setMethod] = useState<PaymentMethod>('RAZORPAY');
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
     setSubmitting(true);
     try {
+      if (method === 'RAZORPAY') {
+        onClose();
+        initiateRazorpayPayment({
+          reservationId,
+          bookingReference,
+          guestName,
+          guestEmail,
+          guestPhone,
+          onSuccess: () => {
+            show('Payment recorded successfully via Razorpay!', 'success');
+            onSaved();
+          },
+          onError: (err) => show(err, 'error'),
+        });
+        return;
+      }
       await paymentsService.create({ reservationId, amount: parseFloat(amount), paymentMethod: method });
       show('Payment recorded.', 'success');
       onSaved();
@@ -250,18 +280,22 @@ function RecordPaymentModal({
   return (
     <Modal title="Record Payment" onClose={onClose} widthClass="max-w-sm">
       <div className="space-y-4">
-        <Input label={`Amount (outstanding: ₹${outstanding.toFixed(2)})`} type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
+        <Input label={`Amount (outstanding: ₹${outstanding.toFixed(2)})`} type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} disabled={method === 'RAZORPAY'} />
         <Select label="Payment method" value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
+          <option value="RAZORPAY">Razorpay (Online Payment)</option>
           <option value="CASH">Cash</option>
-          <option value="CARD">Card</option>
+          <option value="CARD">Card (POS)</option>
           <option value="UPI">UPI</option>
           <option value="BANK_TRANSFER">Bank Transfer</option>
         </Select>
         <div className="flex justify-end gap-3 pt-2">
           <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
-          <PrimaryButton onClick={handleSubmit} disabled={submitting}>Record Payment</PrimaryButton>
+          <PrimaryButton onClick={handleSubmit} disabled={submitting}>
+            {method === 'RAZORPAY' ? 'Proceed to Razorpay' : 'Record Payment'}
+          </PrimaryButton>
         </div>
       </div>
     </Modal>
   );
 }
+
