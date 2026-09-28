@@ -31,7 +31,6 @@ export class PaymentsService implements OnModuleInit {
   }
 
   /** Total already paid (PAID + PARTIAL rows) for a reservation. */
-
   async totalPaid(reservationId: string, manager = this.dataSource.manager): Promise<number> {
     const { sum } = await manager
       .createQueryBuilder(Payment, 'p')
@@ -75,7 +74,7 @@ export class PaymentsService implements OnModuleInit {
         transactionReference: dto.transactionReference,
         paidAt: new Date(),
       });
-      await manager.save(payment);
+      const savedPayment = await manager.save(payment);
 
       await this.auditLog.log(
         {
@@ -83,15 +82,15 @@ export class PaymentsService implements OnModuleInit {
           userName: currentUser?.name,
           action: 'RECORD_PAYMENT',
           entity: 'Payment',
-          entityId: payment.id,
+          entityId: savedPayment.id,
           description: `${currentUser?.name || 'System'} recorded a payment of ${dto.amount} for booking ${reservation.bookingReference}.`,
         },
         manager,
       );
 
-      this.eventsGateway.broadcastPaymentRecorded(payment);
+      this.eventsGateway.broadcastPaymentRecorded(savedPayment);
 
-      return payment;
+      return savedPayment;
     });
   }
 
@@ -127,6 +126,89 @@ export class PaymentsService implements OnModuleInit {
       reservationId: dto.reservationId,
       outstandingAmount: outstanding,
     };
+  }
+
+  async createRazorpayQrCode(
+    dto: { reservationId: string },
+    currentUser: { id: string; email?: string; role?: UserRole },
+  ) {
+    const reservation = await this.dataSource.manager.findOne(Reservation, {
+      where: { id: dto.reservationId },
+      relations: ['guest'],
+    });
+    if (!reservation) throw new NotFoundException('Reservation not found.');
+
+    if (currentUser?.role === UserRole.CUSTOMER && reservation.guest?.email !== currentUser.email) {
+      throw new ForbiddenException('You do not have permission to pay for this reservation.');
+    }
+
+    if (reservation.bookingStatus === BookingStatus.CANCELLED) {
+      throw new BadRequestException('Cannot create payment QR code for a cancelled reservation.');
+    }
+
+    const outstanding = await this.outstandingBalance(dto.reservationId);
+    if (outstanding <= 0) {
+      throw new BadRequestException('This reservation is already fully paid.');
+    }
+
+    const qrResult = await this.razorpayService.createQRCode(dto.reservationId, outstanding);
+    return {
+      ...qrResult,
+      bookingReference: reservation.bookingReference,
+      outstandingAmount: outstanding,
+    };
+  }
+
+  async processRazorpayWebhook(rawBody: string | Buffer, signature: string) {
+    const isValid = this.razorpayService.verifyWebhookSignature(rawBody, signature);
+    if (!isValid) {
+      throw new BadRequestException('Invalid Razorpay webhook signature verification failed.');
+    }
+
+    const payload = typeof rawBody === 'string' ? JSON.parse(rawBody) : JSON.parse(rawBody.toString('utf8'));
+    const event = payload.event;
+
+    if (!['payment.captured', 'payment.authorized', 'qr_code.credited'].includes(event)) {
+      return { status: 'ignored', event };
+    }
+
+    const entity = payload.payload?.payment?.entity || payload.payload?.qr_code?.entity || {};
+    const paymentId = entity.id || payload.payload?.payment?.entity?.id || `PAY_${Date.now()}`;
+    const reservationId = entity.notes?.reservationId || payload.payload?.qr_code?.entity?.notes?.reservationId;
+
+    if (!reservationId) {
+      return { status: 'ignored', message: 'No reservationId found in webhook payload notes.' };
+    }
+
+    // Idempotency Check: search if payment with this transactionReference already exists
+    const existing = await this.paymentsRepo.findOne({ where: { transactionReference: paymentId } });
+    if (existing) {
+      return { status: 'ok', message: 'Payment already processed (idempotent)', paymentId: existing.id };
+    }
+
+    const reservation = await this.dataSource.manager.findOne(Reservation, { where: { id: reservationId } });
+    if (!reservation) {
+      throw new NotFoundException(`Reservation ${reservationId} not found.`);
+    }
+
+    if (reservation.bookingStatus === BookingStatus.CANCELLED) {
+      throw new BadRequestException('Cannot process payment for a cancelled reservation.');
+    }
+
+    const outstanding = await this.outstandingBalance(reservationId);
+    const amountInRupees = entity.amount ? entity.amount / 100 : (entity.payment_amount ? Number(entity.payment_amount) / 100 : outstanding);
+
+    const payment = await this.create(
+      {
+        reservationId,
+        amount: Math.min(amountInRupees, outstanding > 0 ? outstanding : amountInRupees),
+        paymentMethod: PaymentMethod.RAZORPAY,
+        transactionReference: paymentId,
+      },
+      { id: 'webhook', name: 'Razorpay Webhook' },
+    );
+
+    return { status: 'ok', paymentId: payment.id };
   }
 
   async verifyAndRecordRazorpayPayment(

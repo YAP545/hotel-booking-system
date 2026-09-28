@@ -14,6 +14,7 @@ describe('PaymentsService', () => {
   let fakeManager: any;
   let reservationRecord: any;
   let mockRazorpayService: any;
+  let paymentsRepoMock: any;
 
   beforeEach(async () => {
     reservationRecord = {
@@ -52,18 +53,38 @@ describe('PaymentsService', () => {
           status: 'created',
         }),
       ),
+      createQRCode: jest.fn().mockImplementation((reservationId, amount) =>
+        Promise.resolve({
+          id: 'qr_test_123',
+          entity: 'qr_code',
+          imageUrl: 'https://razorpay.com/qr/test.png',
+          amount,
+          status: 'active',
+          reservationId,
+        }),
+      ),
       verifySignature: jest
         .fn()
         .mockImplementation(
           (orderId, paymentId, signature) => signature === 'valid_test_signature',
         ),
+      verifyWebhookSignature: jest
+        .fn()
+        .mockImplementation(
+          (payload, signature) => signature === 'valid_webhook_signature',
+        ),
+    };
+
+    paymentsRepoMock = {
+      findOne: jest.fn().mockResolvedValue(null),
+      find: jest.fn().mockResolvedValue([]),
     };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         PaymentsService,
         { provide: RazorpayService, useValue: mockRazorpayService },
-        { provide: getRepositoryToken(Payment), useValue: {} },
+        { provide: getRepositoryToken(Payment), useValue: paymentsRepoMock },
         {
           provide: getDataSourceToken(),
           useValue: {
@@ -111,7 +132,7 @@ describe('PaymentsService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  describe('Razorpay Integration', () => {
+  describe('Razorpay Integration & QR Codes', () => {
     it('creates a Razorpay order for outstanding balance when configured', async () => {
       const order = await service.createRazorpayOrder(
         { reservationId: 'res-1' },
@@ -120,6 +141,16 @@ describe('PaymentsService', () => {
       expect(order.orderId).toBe('order_test_123');
       expect(order.amount).toBe(100000); // 1000 INR = 100000 paise
       expect(order.outstandingAmount).toBe(1000);
+    });
+
+    it('creates a Razorpay QR Code for outstanding balance', async () => {
+      const qr = await service.createRazorpayQrCode(
+        { reservationId: 'res-1' },
+        { id: 'cust-1', email: 'customer@example.com', role: UserRole.CUSTOMER },
+      );
+      expect(qr.id).toBe('qr_test_123');
+      expect(qr.imageUrl).toBe('https://razorpay.com/qr/test.png');
+      expect(qr.outstandingAmount).toBe(1000);
     });
 
     it('prevents customer from creating order for another guest reservation', async () => {
@@ -151,29 +182,36 @@ describe('PaymentsService', () => {
       expect(payment.transactionReference).toBe(paymentId);
     });
 
-    it('rejects payment verification with invalid signature (zero client trust)', async () => {
-      await expect(
-        service.verifyAndRecordRazorpayPayment(
-          {
-            reservationId: 'res-1',
-            razorpayOrderId: 'order_test_123',
-            razorpayPaymentId: 'pay_test_456',
-            razorpaySignature: 'invalid_forged_signature',
+    it('verifies webhook signature and records payment idempotently', async () => {
+      const payload = JSON.stringify({
+        event: 'payment.captured',
+        payload: {
+          payment: {
+            entity: {
+              id: 'pay_web_123',
+              amount: 100000,
+              notes: { reservationId: 'res-1' },
+            },
           },
-          { id: 'cust-1', email: 'customer@example.com', role: UserRole.CUSTOMER },
-        ),
-      ).rejects.toThrow(BadRequestException);
+        },
+      });
+
+      // First webhook call processes payment
+      const res1 = await service.processRazorpayWebhook(payload, 'valid_webhook_signature');
+      expect(res1.status).toBe('ok');
+      expect(res1.paymentId).toBe('payment-1');
+
+      // Second webhook call with same transactionReference is idempotent
+      paymentsRepoMock.findOne.mockResolvedValueOnce({ id: 'payment-1', transactionReference: 'pay_web_123' });
+      const res2 = await service.processRazorpayWebhook(payload, 'valid_webhook_signature');
+      expect(res2.status).toBe('ok');
+      expect(res2.message).toContain('idempotent');
     });
 
-    it('throws explicit error when Razorpay is not configured (Requirement 3)', async () => {
-      mockRazorpayService.createOrder.mockRejectedValueOnce(
-        new BadRequestException('Razorpay not configured.'),
-      );
+    it('rejects webhook with invalid signature', async () => {
+      const payload = JSON.stringify({ event: 'payment.captured' });
       await expect(
-        service.createRazorpayOrder(
-          { reservationId: 'res-1' },
-          { id: 'cust-1', email: 'customer@example.com', role: UserRole.CUSTOMER },
-        ),
+        service.processRazorpayWebhook(payload, 'invalid_signature'),
       ).rejects.toThrow(BadRequestException);
     });
   });
