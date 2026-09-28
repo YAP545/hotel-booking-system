@@ -35,6 +35,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: hotel_backend
+    env_file:
+      - ./backend/.env
     ports:
       - "3000:3000"
     environment:
@@ -49,6 +51,9 @@ services:
       JWT_SECRET: hotel_booking_jwt_secret_key_2026_dev
       JWT_EXPIRES_IN: 15m
       CORS_ORIGIN: http://localhost:5173
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_placeholder_key}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-rzp_test_placeholder_secret}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-rzp_test_placeholder_webhook_secret}
     depends_on:
       mysql:
         condition: service_healthy
@@ -60,8 +65,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: hotel_frontend
+    env_file:
+      - ./frontend/.env
     ports:
       - "5173:80"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+      VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-rzp_test_placeholder_key}
     depends_on:
       - backend
 

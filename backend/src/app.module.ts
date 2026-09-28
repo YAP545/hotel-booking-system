@@ -38,7 +38,10 @@ import { RefreshToken } from './auth/entities/refresh-token.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['backend/.env', '.env', '../.env'],
+    }),
     AppCacheModule,
     EventsModule,
     LoggerModule.forRoot({
