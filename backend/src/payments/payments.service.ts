@@ -50,7 +50,7 @@ export class PaymentsService implements OnModuleInit {
     return Number((Number(reservation.totalAmount) - paid).toFixed(2));
   }
 
-  async create(dto: CreatePaymentDto, currentUser: { id: string; name: string }) {
+  async create(dto: CreatePaymentDto, currentUser: { id: string; name?: string }) {
     return this.dataSource.transaction(async (manager) => {
       const reservation = await manager.findOne(Reservation, { where: { id: dto.reservationId } });
       if (!reservation) throw new NotFoundException('Reservation not found.');

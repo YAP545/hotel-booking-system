@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CurrentUserDto } from '../common/dto/current-user.dto';
 import { UserRole } from '../common/enums';
 
 @Controller('payments')
@@ -16,21 +17,21 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST)
   @Post()
-  create(@Body() dto: CreatePaymentDto, @CurrentUser() user: any) {
+  create(@Body() dto: CreatePaymentDto, @CurrentUser() user: CurrentUserDto) {
     return this.paymentsService.create(dto, user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Post('razorpay/create-order')
-  createRazorpayOrder(@Body() dto: CreateRazorpayOrderDto, @CurrentUser() user: any) {
+  createRazorpayOrder(@Body() dto: CreateRazorpayOrderDto, @CurrentUser() user: CurrentUserDto) {
     return this.paymentsService.createRazorpayOrder(dto, user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Post('razorpay/create-qr')
-  createRazorpayQrCode(@Body() dto: CreateRazorpayQrDto, @CurrentUser() user: any) {
+  createRazorpayQrCode(@Body() dto: CreateRazorpayQrDto, @CurrentUser() user: CurrentUserDto) {
     return this.paymentsService.createRazorpayQrCode(dto, user);
   }
 
@@ -47,14 +48,14 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Post('razorpay/verify')
-  verifyRazorpayPayment(@Body() dto: VerifyRazorpayPaymentDto, @CurrentUser() user: any) {
+  verifyRazorpayPayment(@Body() dto: VerifyRazorpayPaymentDto, @CurrentUser() user: CurrentUserDto) {
     return this.paymentsService.verifyAndRecordRazorpayPayment(dto, user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Get()
-  findAll(@Query('reservationId') reservationId?: string, @CurrentUser() user?: any) {
+  findAll(@Query('reservationId') reservationId?: string, @CurrentUser() user?: CurrentUserDto) {
     if (user?.role === UserRole.CUSTOMER && !reservationId) {
       throw new ForbiddenException('Customers can only view payments by reservationId.');
     }

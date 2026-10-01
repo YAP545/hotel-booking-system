@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CurrentUserDto } from '../common/dto/current-user.dto';
 import { UserRole } from '../common/enums';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,7 +29,7 @@ export class GuestsController {
 
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() user?: any) {
+  findOne(@Param('id') id: string, @CurrentUser() user?: CurrentUserDto) {
     return this.service.findOne(id, user);
   }
 

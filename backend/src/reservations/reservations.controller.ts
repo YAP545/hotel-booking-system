@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CurrentUserDto } from '../common/dto/current-user.dto';
 import { UserRole, BookingStatus } from '../common/enums';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -31,13 +32,13 @@ export class ReservationsController {
 
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Get('my-bookings')
-  findMyBookings(@CurrentUser() user: any) {
+  findMyBookings(@CurrentUser() user: CurrentUserDto) {
     return this.reservationsService.findMyBookings(user.email);
   }
 
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Post('reservations')
-  create(@Body() dto: CreateReservationDto, @CurrentUser() user: any) {
+  create(@Body() dto: CreateReservationDto, @CurrentUser() user: CurrentUserDto) {
     return this.reservationsService.create(dto, user);
   }
 
@@ -65,7 +66,7 @@ export class ReservationsController {
 
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Get('reservations/:id')
-  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserDto) {
     return this.reservationsService.findOne(id, user);
   }
 
@@ -74,7 +75,7 @@ export class ReservationsController {
   update(
     @Param('id') id: string,
     @Body() dto: UpdateReservationDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.reservationsService.update(id, dto, user);
   }
@@ -84,7 +85,7 @@ export class ReservationsController {
   cancel(
     @Param('id') id: string,
     @Body() dto: CancelReservationDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserDto,
   ) {
     return this.reservationsService.cancel(id, dto, user);
   }

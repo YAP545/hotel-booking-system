@@ -147,7 +147,7 @@ export class ReservationsService {
 
   async create(
     dto: CreateReservationDto,
-    currentUser: { id: string; name: string; email?: string; role?: UserRole },
+    currentUser: { id: string; name?: string; email?: string; role?: UserRole },
   ) {
     if (new Date(dto.checkOutDate) <= new Date(dto.checkInDate)) {
       throw new BadRequestException('Check-out date must be later than check-in date.');
@@ -367,7 +367,7 @@ export class ReservationsService {
   async cancel(
     id: string,
     dto: CancelReservationDto,
-    currentUser: { id: string; name: string; email?: string; role?: UserRole },
+    currentUser: { id: string; name?: string; email?: string; role?: UserRole },
   ) {
     return this.dataSource.transaction(async (manager) => {
       const reservation = await manager.findOne(Reservation, {
@@ -480,7 +480,7 @@ export class ReservationsService {
   async update(
     id: string,
     dto: UpdateReservationDto,
-    currentUser: { id: string; name: string },
+    currentUser: { id: string; name?: string; email?: string; role?: UserRole },
   ) {
     return this.dataSource.transaction(async (manager) => {
       const reservation = await manager.findOne(Reservation, {

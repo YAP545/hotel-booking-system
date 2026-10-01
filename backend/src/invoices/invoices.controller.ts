@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CurrentUserDto } from '../common/dto/current-user.dto';
 import { UserRole } from '../common/enums';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13,7 +14,7 @@ export class InvoicesController {
   constructor(private readonly service: InvoicesService) {}
 
   @Get()
-  findAll(@Query('reservationId') reservationId?: string, @CurrentUser() user?: any) {
+  findAll(@Query('reservationId') reservationId?: string, @CurrentUser() user?: CurrentUserDto) {
     if (user?.role === UserRole.CUSTOMER && !reservationId) {
       throw new ForbiddenException('Customers can only search invoices by reservationId.');
     }
@@ -22,7 +23,7 @@ export class InvoicesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() user?: any) {
+  findOne(@Param('id') id: string, @CurrentUser() user?: CurrentUserDto) {
     return this.service.findOne(id, user);
   }
 }
