@@ -4,6 +4,7 @@ import { RoomStatusBadge } from './StatusBadges';
 import { useSocket } from '../hooks/useSocket';
 import { Card, LoadingState, ErrorState } from './ui';
 import { Radio } from 'lucide-react';
+import { Room } from '../types';
 
 const statusBgColors: Record<string, string> = {
   AVAILABLE: 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100',
@@ -15,7 +16,7 @@ const statusBgColors: Record<string, string> = {
 };
 
 export function RoomStatusBoard() {
-  const [rooms, setRooms] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastLiveEvent, setLastLiveEvent] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function RoomStatusBoard() {
   }, []);
 
   useSocket({
-    'room.status_changed': (data: { roomId: string; roomNumber: string; status: string }) => {
+    'room.status_changed': (data: { roomId: string; roomNumber: string; status: import('../types').RoomStatus }) => {
       setRooms((prevRooms) =>
         prevRooms.map((room) =>
           room.id === data.roomId ? { ...room, status: data.status } : room

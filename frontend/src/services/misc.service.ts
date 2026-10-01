@@ -1,6 +1,33 @@
 import { api } from './api';
 import { DashboardData, Invoice, Payment, PaymentMethod } from '../types';
 
+export interface HotelSettingsPayload {
+  hotelName?: string;
+  taxPercent?: number;
+  cancellationFeePercent?: number;
+  freeCancellationHours?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
+}
+
+export interface CreateUserPayload {
+  name: string;
+  email: string;
+  password?: string;
+  phone?: string;
+  role: 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER';
+  isActive?: boolean;
+}
+
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+  password?: string;
+  phone?: string;
+  role?: 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER';
+  isActive?: boolean;
+}
+
 export const paymentsService = {
   create(payload: { reservationId: string; amount: number; paymentMethod: PaymentMethod; transactionReference?: string }) {
     return api.post<Payment>('/payments', payload);
@@ -76,12 +103,12 @@ export const reportsService = {
 };
 
 export const settingsService = {
-  get: () => api.get('/settings'),
-  update: (payload: any) => api.patch('/settings', payload),
+  get: () => api.get<HotelSettingsPayload>('/settings'),
+  update: (payload: HotelSettingsPayload) => api.patch('/settings', payload),
 };
 
 export const usersService = {
   list: () => api.get('/users'),
-  create: (payload: any) => api.post('/users', payload),
-  update: (id: string, payload: any) => api.patch(`/users/${id}`, payload),
+  create: (payload: CreateUserPayload) => api.post('/users', payload),
+  update: (id: string, payload: UpdateUserPayload) => api.patch(`/users/${id}`, payload),
 };

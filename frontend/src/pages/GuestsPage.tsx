@@ -9,8 +9,7 @@ import { useToast } from '../context/ToastContext';
 import { apiErrorMessage } from '../services/api';
 
 export function GuestsPage() {
-  const { show } = useToast();
-  const [guests, setGuests] = useState<any[]>([]);
+  const [guests, setGuests] = useState<GuestDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');

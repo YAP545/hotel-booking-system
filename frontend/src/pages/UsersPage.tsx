@@ -87,7 +87,7 @@ export function UsersPage() {
 
 function UserFormModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { show } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'RECEPTIONIST', phone: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'RECEPTIONIST' as 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER', phone: '' });
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
@@ -110,7 +110,7 @@ function UserFormModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
         <Input label="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <Input label="Email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <Input label="Password" type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-        <Select label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+        <Select label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER' })}>
           <option value="ADMIN">Admin</option>
           <option value="RECEPTIONIST">Receptionist</option>
         </Select>

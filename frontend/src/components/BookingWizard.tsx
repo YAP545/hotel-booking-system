@@ -66,7 +66,7 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
       let guestId = selectedGuest?.id;
       if (guestMode === 'new') {
         const created = await guestsService.create(newGuest);
-        guestId = (created.data as any).id;
+        guestId = created.data.id;
       }
       if (!guestId || !selectedRoom) throw new Error('Missing guest or room selection.');
 

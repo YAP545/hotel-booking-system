@@ -19,13 +19,25 @@ function ChartEmptyState({ label }: { label: string }) {
   );
 }
 
+interface RevenueRow { date: string; total: string | number; }
+interface OccupancyRow { date: string; roomsBooked: number; occupancyRate: string | number; }
+interface CancellationRow { 
+  id: string; 
+  reservation?: { bookingReference: string }; 
+  reason?: string; 
+  refundAmount?: number; 
+  cancellationFee?: number; 
+  cancellationDate?: string; 
+}
+interface PaymentSummaryRow { method: string; total: string | number; count: string | number; }
+
 export function ReportsPage() {
   const [fromDate, setFromDate] = useState(todayMinus(30));
   const [toDate, setToDate] = useState(todayMinus(0));
-  const [revenue, setRevenue] = useState<any[]>([]);
-  const [occupancy, setOccupancy] = useState<any[]>([]);
-  const [cancellations, setCancellations] = useState<any[]>([]);
-  const [paymentSummary, setPaymentSummary] = useState<any[]>([]);
+  const [revenue, setRevenue] = useState<RevenueRow[]>([]);
+  const [occupancy, setOccupancy] = useState<OccupancyRow[]>([]);
+  const [cancellations, setCancellations] = useState<CancellationRow[]>([]);
+  const [paymentSummary, setPaymentSummary] = useState<PaymentSummaryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -1,8 +1,26 @@
 import { paymentsService } from '../services/misc.service';
+import { Payment } from '../types';
+
+interface RazorpayWindow extends Window {
+  Razorpay: new (options: Record<string, unknown>) => {
+    on: (event: string, handler: (response: RazorpayFailureResponse) => void) => void;
+    open: () => void;
+  };
+}
+
+interface RazorpayHandlerResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayFailureResponse {
+  error?: { description?: string };
+}
 
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
-    if ((window as any).Razorpay) {
+    if ((window as unknown as RazorpayWindow).Razorpay) {
       resolve(true);
       return;
     }
@@ -20,7 +38,7 @@ export interface InitiateRazorpayPaymentParams {
   guestEmail?: string;
   guestPhone?: string;
   bookingReference?: string;
-  onSuccess: (payment: any) => void;
+  onSuccess: (payment: Payment) => void;
   onError: (errorMsg: string) => void;
 }
 
@@ -28,8 +46,9 @@ export async function initiateRazorpayPayment(params: InitiateRazorpayPaymentPar
   try {
     const orderData = await paymentsService.createRazorpayOrder(params.reservationId);
     const loaded = await loadRazorpayScript();
+    const rzpWindow = window as unknown as RazorpayWindow;
 
-    if (!loaded || !(window as any).Razorpay) {
+    if (!loaded || !rzpWindow.Razorpay) {
       params.onError('Razorpay SDK failed to load. Please check your network connection.');
       return;
     }
@@ -41,7 +60,7 @@ export async function initiateRazorpayPayment(params: InitiateRazorpayPaymentPar
       name: 'Grand Hotel',
       description: `Payment for booking ${params.bookingReference || params.reservationId}`,
       order_id: orderData.orderId,
-      handler: async function (response: any) {
+      handler: async function (response: RazorpayHandlerResponse) {
         try {
           const payment = await paymentsService.verifyRazorpayPayment({
             reservationId: params.reservationId,
@@ -50,8 +69,9 @@ export async function initiateRazorpayPayment(params: InitiateRazorpayPaymentPar
             razorpaySignature: response.razorpay_signature,
           });
           params.onSuccess(payment);
-        } catch (err: any) {
-          const msg = err.response?.data?.message || err.message || 'Signature verification failed.';
+        } catch (err: unknown) {
+          const e = err as { response?: { data?: { message?: string } }; message?: string };
+          const msg = e.response?.data?.message || e.message || 'Signature verification failed.';
           params.onError(msg);
         }
       },
@@ -65,13 +85,14 @@ export async function initiateRazorpayPayment(params: InitiateRazorpayPaymentPar
       },
     };
 
-    const rzp = new (window as any).Razorpay(options);
-    rzp.on('payment.failed', function (response: any) {
+    const rzp = new rzpWindow.Razorpay(options);
+    rzp.on('payment.failed', function (response: RazorpayFailureResponse) {
       params.onError(response.error?.description || 'Payment failed on Razorpay checkout.');
     });
     rzp.open();
-  } catch (err: any) {
-    const msg = err.response?.data?.message || err.message || 'Failed to initialize Razorpay payment.';
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } }; message?: string };
+    const msg = e.response?.data?.message || e.message || 'Failed to initialize Razorpay payment.';
     params.onError(msg);
   }
 }

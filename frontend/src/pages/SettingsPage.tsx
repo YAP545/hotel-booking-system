@@ -1,12 +1,12 @@
 import { useEffect, useState, FormEvent } from 'react';
-import { settingsService } from '../services/misc.service';
+import { settingsService, HotelSettingsPayload } from '../services/misc.service';
 import { Card, ErrorState, Input, LoadingState, PageHeader, PrimaryButton } from '../components/ui';
 import { useToast } from '../context/ToastContext';
 import { apiErrorMessage } from '../services/api';
 
 export function SettingsPage() {
   const { show } = useToast();
-  const [form, setForm] = useState<any>(null);
+  const [form, setForm] = useState<HotelSettingsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -19,6 +19,7 @@ export function SettingsPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!form) return;
     setSaving(true);
     try {
       await settingsService.update(form);

@@ -4,6 +4,7 @@ import { roomsService } from '../services/rooms.service';
 import { Card, LoadingState, ErrorState } from './ui';
 import { useToast } from '../context/ToastContext';
 import { BookingStatusBadge } from './StatusBadges';
+import { Room, Reservation } from '../types';
 
 function getDaysArray(startDateStr: string, numDays: number) {
   const dates: string[] = [];
@@ -18,11 +19,11 @@ function getDaysArray(startDateStr: string, numDays: number) {
 
 export function ReservationTimeline() {
   const toast = useToast();
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [reservations, setReservations] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [draggedReservation, setDraggedReservation] = useState<any | null>(null);
+  const [draggedReservation, setDraggedReservation] = useState<Reservation | null>(null);
 
   const startDate = new Date().toISOString().slice(0, 10);
   const days = getDaysArray(startDate, 14);
@@ -46,7 +47,7 @@ export function ReservationTimeline() {
     loadData();
   }, []);
 
-  function handleDragStart(resItem: any) {
+  function handleDragStart(resItem: Reservation) {
     setDraggedReservation(resItem);
   }
 
