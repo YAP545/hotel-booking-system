@@ -2,6 +2,7 @@ import { Body, Controller, Get, Headers, Post, Query, Req, UseGuards, ForbiddenE
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { CreateRazorpayOrderDto, VerifyRazorpayPaymentDto } from './dto/razorpay-payment.dto';
+import { CreateRazorpayQrDto } from './dto/create-razorpay-qr.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -29,7 +30,7 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Post('razorpay/create-qr')
-  createRazorpayQrCode(@Body() dto: { reservationId: string }, @CurrentUser() user: any) {
+  createRazorpayQrCode(@Body() dto: CreateRazorpayQrDto, @CurrentUser() user: any) {
     return this.paymentsService.createRazorpayQrCode(dto, user);
   }
 
