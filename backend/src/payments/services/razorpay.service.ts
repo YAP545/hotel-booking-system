@@ -29,7 +29,7 @@ export interface RazorpayQrResult {
 @Injectable()
 export class RazorpayService {
   private readonly logger = new Logger(RazorpayService.name);
-  private instance: any | null = null;
+  private instance: InstanceType<typeof Razorpay> | null = null;
   private readonly keyId: string;
   private readonly keySecret: string;
   private readonly webhookSecret: string;
@@ -85,13 +85,23 @@ export class RazorpayService {
     const amountInPaise = Math.round(amountInRupees * 100);
 
     try {
-      const order = await this.instance.orders.create({
+      const order = await this.instance!.orders.create({
         amount: amountInPaise,
         currency: 'INR',
         receipt: `receipt_${reservationId.slice(0, 10)}_${Date.now()}`,
         notes: { reservationId },
       });
-      return { ...order, keyId: this.keyId };
+      return {
+        id: order.id,
+        entity: order.entity,
+        amount: Number(order.amount),
+        amount_paid: Number(order.amount_paid),
+        amount_due: Number(order.amount_due),
+        currency: order.currency,
+        receipt: order.receipt || '',
+        status: order.status,
+        keyId: this.keyId,
+      };
     } catch (err: any) {
       this.logger.error(`Razorpay API Order Creation Failed: ${err.message}`);
       throw new BadRequestException(`Razorpay API Error: ${err.message || 'Failed to create order on Razorpay.'}`);
@@ -104,7 +114,7 @@ export class RazorpayService {
     const amountInPaise = Math.round(amountInRupees * 100);
 
     try {
-      const qrCode = await this.instance.qrCode.create({
+      const qrCode = await this.instance!.qrCode.create({
         type: 'upi_qr',
         name: 'Grand Hotel Booking',
         usage: 'single_use',

@@ -11,6 +11,17 @@ import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserRole } from '../common/enums';
 
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: { id: string; name: string; email: string; role: UserRole };
+}
+
+export interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -19,7 +30,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<AuthResponse> {
     const user = await this.usersRepo.findOne({ where: { email: dto.email } });
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Invalid email or password.');
@@ -37,7 +48,7 @@ export class AuthService {
     };
   }
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto): Promise<AuthResponse> {
     const existing = await this.usersRepo.findOne({ where: { email: dto.email } });
     if (existing) {
       throw new ConflictException('An account with this email already exists.');
@@ -61,7 +72,7 @@ export class AuthService {
     };
   }
 
-  async refreshToken(tokenString: string) {
+  async refreshToken(tokenString: string): Promise<TokenPair> {
     if (!tokenString) {
       throw new UnauthorizedException('Refresh token is required.');
     }
@@ -86,7 +97,7 @@ export class AuthService {
     return this.generateTokens(tokenRecord.user);
   }
 
-  async logout(tokenString?: string) {
+  async logout(tokenString?: string): Promise<{ message: string }> {
     if (tokenString) {
       const record = await this.refreshTokenRepo.findOne({ where: { token: tokenString } });
       if (record) {
@@ -97,12 +108,12 @@ export class AuthService {
     return { message: 'Logged out successfully.' };
   }
 
-  async logoutAll(userId: string) {
+  async logoutAll(userId: string): Promise<{ message: string }> {
     await this.refreshTokenRepo.update({ userId, isRevoked: false }, { isRevoked: true });
     return { message: 'Logged out of all devices successfully.' };
   }
 
-  async changePassword(userId: string, dto: ChangePasswordDto) {
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<{ message: string }> {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user || !user.isActive) {
       throw new UnauthorizedException('User not found or inactive.');
@@ -121,7 +132,7 @@ export class AuthService {
     return { message: 'Password updated successfully.' };
   }
 
-  private async generateTokens(user: User) {
+  private async generateTokens(user: User): Promise<TokenPair> {
     const accessToken = this.signToken(user);
     const refreshTokenString = uuidv4();
     const expiresAt = new Date();
@@ -138,7 +149,7 @@ export class AuthService {
     return { accessToken, refreshToken: refreshTokenString };
   }
 
-  private signToken(user: User) {
+  private signToken(user: User): string {
     return this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
   }
 }

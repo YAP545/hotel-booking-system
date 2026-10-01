@@ -38,8 +38,8 @@ export class PaymentsController {
   @Post('razorpay/webhook')
   handleRazorpayWebhook(
     @Headers('x-razorpay-signature') signature: string,
-    @Req() req: any,
-    @Body() body: any,
+    @Req() req: { rawBody?: Buffer | string },
+    @Body() body: Record<string, unknown> | string,
   ) {
     const rawPayload = req.rawBody || (typeof body === 'string' ? body : JSON.stringify(body));
     return this.paymentsService.processRazorpayWebhook(rawPayload, signature);
