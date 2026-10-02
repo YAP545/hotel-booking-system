@@ -35,7 +35,18 @@ async function seed() {
   const settingsRepo = AppDataSource.getRepository(HotelSettings);
 
   // --- Settings ---
-  const settingsCount = await settingsRepo.count();
+  let settingsCount: number;
+  try {
+    settingsCount = await settingsRepo.count();
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ER_NO_SUCH_TABLE') {
+      console.error('\nERROR: Database tables do not exist!');
+      console.error('Make sure you run migrations before seeding: npm run migration:run\n');
+      process.exit(1);
+    }
+    throw error;
+  }
+
   if (settingsCount === 0) {
     await settingsRepo.save(settingsRepo.create({ id: 1 }));
   }

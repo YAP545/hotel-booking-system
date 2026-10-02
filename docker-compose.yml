@@ -35,6 +35,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: hotel_backend
+    command: sh -c "npm run migration:run && node dist/main"
     env_file:
       - ./backend/.env
     ports:
