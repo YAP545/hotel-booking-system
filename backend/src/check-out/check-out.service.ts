@@ -91,7 +91,11 @@ export class CheckOutService {
       );
 
       this.eventsGateway.broadcastCheckOutCompleted({ reservation, checkOut, invoice });
-      this.eventsGateway.broadcastRoomStatusChanged({ roomId: room.id, roomNumber: room.roomNumber, status: room.status });
+      this.eventsGateway.broadcastRoomStatusChanged({
+        roomId: room.id,
+        roomNumber: room.roomNumber,
+        status: room.status,
+      });
       this.emailService.sendCheckOutReceipt(reservation, invoice.invoiceNumber, Number(reservation.totalAmount));
 
       return { reservation, checkOut, invoice };

@@ -110,7 +110,6 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-
     it('forces every self-registered user to CUSTOMER role even if client passes role ADMIN', async () => {
       usersRepo.findOne.mockResolvedValue(null);
       usersRepo.create = jest.fn().mockImplementation((data) => ({ id: 'new-user-1', ...data }));
@@ -133,5 +132,3 @@ describe('AuthService', () => {
     });
   });
 });
-
-

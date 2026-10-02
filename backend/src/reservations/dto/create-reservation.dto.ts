@@ -31,4 +31,3 @@ export class CreateReservationDto {
   @IsOptional()
   quoteToken?: string;
 }
-

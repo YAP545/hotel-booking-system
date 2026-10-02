@@ -5,9 +5,7 @@ import { AuditLog } from '../entities/audit-log.entity';
 
 @Injectable()
 export class AuditLogService {
-  constructor(
-    @InjectRepository(AuditLog) private repo: Repository<AuditLog>,
-  ) {}
+  constructor(@InjectRepository(AuditLog) private repo: Repository<AuditLog>) {}
 
   /**
    * Records an audit entry. Pass `manager` when called inside a transaction
@@ -29,15 +27,17 @@ export class AuditLogService {
     await repo.save(entry);
   }
 
-  async findAll(filters: {
-    action?: string;
-    userName?: string;
-    entity?: string;
-    fromDate?: string;
-    toDate?: string;
-    page?: number;
-    limit?: number;
-  } = {}) {
+  async findAll(
+    filters: {
+      action?: string;
+      userName?: string;
+      entity?: string;
+      fromDate?: string;
+      toDate?: string;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
     const page = filters.page && filters.page > 0 ? filters.page : 1;
     const limit = filters.limit && filters.limit > 0 ? Math.min(filters.limit, 100) : 50;
 

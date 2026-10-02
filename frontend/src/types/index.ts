@@ -1,20 +1,8 @@
 export type UserRole = 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER';
 
-export type RoomStatus =
-  | 'AVAILABLE'
-  | 'RESERVED'
-  | 'OCCUPIED'
-  | 'CLEANING'
-  | 'MAINTENANCE'
-  | 'OUT_OF_SERVICE';
+export type RoomStatus = 'AVAILABLE' | 'RESERVED' | 'OCCUPIED' | 'CLEANING' | 'MAINTENANCE' | 'OUT_OF_SERVICE';
 
-export type BookingStatus =
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'CHECKED_IN'
-  | 'CHECKED_OUT'
-  | 'CANCELLED'
-  | 'NO_SHOW';
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED' | 'NO_SHOW';
 
 export type PaymentMethod = 'CASH' | 'CARD' | 'UPI' | 'BANK_TRANSFER' | 'RAZORPAY';
 

@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { ReservationsService } from '../../reservations/reservations.service';
 import { InvoicesService } from '../../invoices/invoices.service';
 import { Reservation } from '../../reservations/reservation.entity';
@@ -44,7 +44,13 @@ describe('Customer Authorization Security Audit', () => {
   beforeEach(async () => {
     const fakeManager: any = {
       findOne: jest.fn().mockImplementation((entity, opts) => {
-        if (entity === Room) return Promise.resolve({ id: 'room-1', isActive: true, status: 'AVAILABLE', roomType: { capacity: 2, basePrice: 100 } });
+        if (entity === Room)
+          return Promise.resolve({
+            id: 'room-1',
+            isActive: true,
+            status: 'AVAILABLE',
+            roomType: { capacity: 2, basePrice: 100 },
+          });
         if (entity === Guest) {
           if (opts?.where?.email === 'customerA@example.com') return Promise.resolve(guestA);
           if (opts?.where?.id === 'guest-b-id') return Promise.resolve(guestB);
@@ -58,7 +64,12 @@ describe('Customer Authorization Security Audit', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue({ id: 'room-1', isActive: true, status: 'AVAILABLE', roomType: { capacity: 2, basePrice: 100 } }),
+        getOne: jest.fn().mockResolvedValue({
+          id: 'room-1',
+          isActive: true,
+          status: 'AVAILABLE',
+          roomType: { capacity: 2, basePrice: 100 },
+        }),
         getCount: jest.fn().mockResolvedValue(0),
       }),
       count: jest.fn().mockResolvedValue(0),
@@ -73,9 +84,15 @@ describe('Customer Authorization Security Audit', () => {
         { provide: getRepositoryToken(Reservation), useValue: { findOne: jest.fn().mockResolvedValue(reservationB) } },
         { provide: getRepositoryToken(Room), useValue: {} },
         { provide: getRepositoryToken(Guest), useValue: { findOne: jest.fn().mockResolvedValue(guestA) } },
-        { provide: getRepositoryToken(HotelSettings), useValue: { findOne: jest.fn().mockResolvedValue({ id: 1, taxPercent: 10 }) } },
+        {
+          provide: getRepositoryToken(HotelSettings),
+          useValue: { findOne: jest.fn().mockResolvedValue({ id: 1, taxPercent: 10 }) },
+        },
         { provide: getRepositoryToken(Invoice), useValue: { findOne: jest.fn().mockResolvedValue(invoiceB) } },
-        { provide: getDataSourceToken(), useValue: { manager: fakeManager, transaction: (cb: any) => cb(fakeManager) } },
+        {
+          provide: getDataSourceToken(),
+          useValue: { manager: fakeManager, transaction: (cb: any) => cb(fakeManager) },
+        },
         { provide: AuditLogService, useValue: { log: jest.fn() } },
         { provide: EventsGateway, useValue: { broadcastBookingCreated: jest.fn() } },
         { provide: DynamicPricingService, useValue: new DynamicPricingService() },
@@ -100,9 +117,9 @@ describe('Customer Authorization Security Audit', () => {
 
   it('denies Customer A cancellation access to Customer B reservation (returns 403 Forbidden)', async () => {
     const userA = { id: 'user-a', name: 'Alice', email: 'customerA@example.com', role: UserRole.CUSTOMER };
-    await expect(
-      reservationsService.cancel('res-b-id', { reason: 'Test cancel' }, userA),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(reservationsService.cancel('res-b-id', { reason: 'Test cancel' }, userA)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('denies Customer A read access to Customer B invoice (returns 403 Forbidden)', async () => {

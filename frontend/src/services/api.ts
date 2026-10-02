@@ -29,7 +29,7 @@ api.interceptors.response.use(
         try {
           const { data } = await axios.post(
             `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/auth/refresh`,
-            { refreshToken }
+            { refreshToken },
           );
           if (data?.accessToken) {
             localStorage.setItem('accessToken', data.accessToken);
@@ -53,7 +53,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
 
 /** Extracts a friendly message from our backend's error shape. */
 export function apiErrorMessage(err: unknown): string {

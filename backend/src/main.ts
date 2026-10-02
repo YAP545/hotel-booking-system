@@ -20,14 +20,11 @@ async function bootstrap() {
       transform: true,
       forbidNonWhitelisted: false,
       exceptionFactory: (errors) => {
-        const messages = errors
-          .map((e) => Object.values(e.constraints || {}).join(', '))
-          .join(' | ');
+        const messages = errors.map((e) => Object.values(e.constraints || {}).join(', ')).join(' | ');
         return new BadRequestException(messages || 'Validation failed.');
       },
     }),
   );
-
 
   app.useGlobalFilters(new AllExceptionsFilter());
   app.setGlobalPrefix('api');

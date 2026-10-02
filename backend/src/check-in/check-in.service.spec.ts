@@ -56,22 +56,16 @@ describe('CheckInService', () => {
 
   it('rejects check-in for a cancelled booking (Rule 6)', async () => {
     reservationRecord.bookingStatus = BookingStatus.CANCELLED;
-    await expect(service.checkIn('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(service.checkIn('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(BadRequestException);
   });
 
   it('rejects a duplicate check-in', async () => {
     reservationRecord.bookingStatus = BookingStatus.CHECKED_IN;
-    await expect(service.checkIn('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(
-      ConflictException,
-    );
+    await expect(service.checkIn('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(ConflictException);
   });
 
   it('rejects check-in for a pending (unconfirmed) booking', async () => {
     reservationRecord.bookingStatus = BookingStatus.PENDING;
-    await expect(service.checkIn('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(service.checkIn('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(BadRequestException);
   });
 });

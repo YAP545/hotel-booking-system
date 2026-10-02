@@ -63,16 +63,12 @@ describe('CheckOutService', () => {
 
   it('rejects checkout for a booking that has not checked in (Rule 7)', async () => {
     reservationRecord.bookingStatus = BookingStatus.CONFIRMED;
-    await expect(service.checkOut('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(service.checkOut('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(BadRequestException);
   });
 
   it('blocks checkout when there is an outstanding balance', async () => {
     outstanding = 250;
-    await expect(service.checkOut('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(service.checkOut('res-1', { id: 'u1', name: 'Reception' })).rejects.toThrow(BadRequestException);
   });
 
   it('completes checkout, moves room to CLEANING, and issues an invoice when fully paid', async () => {

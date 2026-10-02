@@ -24,7 +24,9 @@ export class EmailService {
       });
       this.logger.log(`SMTP configured using host: ${host}:${process.env.SMTP_PORT || 587}`);
     } else {
-      this.logger.log('SMTP not configured (SMTP_HOST is not set in environment). Operating in explicit mock-logger mode.');
+      this.logger.log(
+        'SMTP not configured (SMTP_HOST is not set in environment). Operating in explicit mock-logger mode.',
+      );
     }
   }
 
@@ -61,7 +63,11 @@ export class EmailService {
    */
   async sendTestEmail(toEmail = 'test@example.com') {
     if (this.transporter) {
-      return this.dispatchEmail(toEmail, 'Test Email - Grand Hotel Booking System', 'This is a real test email sent via configured SMTP.');
+      return this.dispatchEmail(
+        toEmail,
+        'Test Email - Grand Hotel Booking System',
+        'This is a real test email sent via configured SMTP.',
+      );
     }
 
     // Create a dynamic Ethereal test inbox for demonstration/testing

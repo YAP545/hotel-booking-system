@@ -14,12 +14,9 @@ import { DynamicPricingService } from '../common/services/dynamic-pricing.servic
 import { EmailService } from '../common/services/email.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Reservation, Room, Guest, HotelSettings, Cancellation, Payment, AuditLog]),
-  ],
+  imports: [TypeOrmModule.forFeature([Reservation, Room, Guest, HotelSettings, Cancellation, Payment, AuditLog])],
   controllers: [ReservationsController],
   providers: [ReservationsService, AuditLogService, DynamicPricingService, EmailService],
   exports: [ReservationsService, DynamicPricingService, EmailService],
 })
 export class ReservationsModule {}
-

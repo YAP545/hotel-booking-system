@@ -1,14 +1,7 @@
-import {
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
-} from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
 
-export function IsAfterDate(
-  property: string,
-  validationOptions?: ValidationOptions,
-) {
-  return function (object: Object, propertyName: string) {
+export function IsAfterDate(property: string, validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isAfterDate',
       target: object.constructor,
@@ -22,11 +15,7 @@ export function IsAfterDate(
           if (!value || !relatedValue) return true; // Let IsNotEmpty handle presence
           const date = new Date(value);
           const relatedDate = new Date(relatedValue);
-          return (
-            !isNaN(date.getTime()) &&
-            !isNaN(relatedDate.getTime()) &&
-            date.getTime() > relatedDate.getTime()
-          );
+          return !isNaN(date.getTime()) && !isNaN(relatedDate.getTime()) && date.getTime() > relatedDate.getTime();
         },
         defaultMessage(args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;

@@ -23,9 +23,7 @@ describe('ReportsService Revenue Accuracy Audit', () => {
           groupBy: jest.fn().mockReturnThis(),
           orderBy: jest.fn().mockReturnThis(),
           getRawOne: jest.fn().mockResolvedValue({ sum: '1000.00' }),
-          getRawMany: jest.fn().mockResolvedValue([
-            { date: '2026-09-28', total: '1000.00' },
-          ]),
+          getRawMany: jest.fn().mockResolvedValue([{ date: '2026-09-28', total: '1000.00' }]),
         };
       }),
     };

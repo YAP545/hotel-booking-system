@@ -60,9 +60,7 @@ export class PaymentsService implements OnModuleInit {
 
       const outstanding = await this.outstandingBalance(dto.reservationId, manager);
       if (dto.amount > outstanding + 0.01) {
-        throw new BadRequestException(
-          `Payment amount exceeds the outstanding balance of ${outstanding}.`,
-        );
+        throw new BadRequestException(`Payment amount exceeds the outstanding balance of ${outstanding}.`);
       }
 
       const remainingAfter = Number((outstanding - dto.amount).toFixed(2));
@@ -94,10 +92,7 @@ export class PaymentsService implements OnModuleInit {
     });
   }
 
-  async createRazorpayOrder(
-    dto: CreateRazorpayOrderDto,
-    currentUser: { id: string; email?: string; role?: UserRole },
-  ) {
+  async createRazorpayOrder(dto: CreateRazorpayOrderDto, currentUser: { id: string; email?: string; role?: UserRole }) {
     const reservation = await this.dataSource.manager.findOne(Reservation, {
       where: { id: dto.reservationId },
       relations: ['guest'],
@@ -196,7 +191,11 @@ export class PaymentsService implements OnModuleInit {
     }
 
     const outstanding = await this.outstandingBalance(reservationId);
-    const amountInRupees = entity.amount ? entity.amount / 100 : (entity.payment_amount ? Number(entity.payment_amount) / 100 : outstanding);
+    const amountInRupees = entity.amount
+      ? entity.amount / 100
+      : entity.payment_amount
+        ? Number(entity.payment_amount) / 100
+        : outstanding;
 
     const payment = await this.create(
       {
@@ -255,10 +254,7 @@ export class PaymentsService implements OnModuleInit {
     );
   }
 
-  async findByReservation(
-    reservationId: string,
-    currentUser?: { id: string; email?: string; role?: UserRole },
-  ) {
+  async findByReservation(reservationId: string, currentUser?: { id: string; email?: string; role?: UserRole }) {
     if (currentUser?.role === UserRole.CUSTOMER) {
       const reservation = await this.dataSource.manager.findOne(Reservation, {
         where: { id: reservationId },

@@ -45,11 +45,7 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
   return (
     <Modal title="Change Password" onClose={onClose} widthClass="max-w-md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-xs font-medium text-red-700">
-            {error}
-          </div>
-        )}
+        {error && <div className="rounded-lg bg-red-50 p-3 text-xs font-medium text-red-700">{error}</div>}
 
         <Input
           label="Current Password"

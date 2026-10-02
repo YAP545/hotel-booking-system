@@ -71,7 +71,11 @@ export class CheckInService {
       );
 
       this.eventsGateway.broadcastCheckInCompleted({ reservation, checkIn });
-      this.eventsGateway.broadcastRoomStatusChanged({ roomId: room.id, roomNumber: room.roomNumber, status: room.status });
+      this.eventsGateway.broadcastRoomStatusChanged({
+        roomId: room.id,
+        roomNumber: room.roomNumber,
+        status: room.status,
+      });
       this.emailService.sendCheckInWelcome(reservation, room.roomNumber);
 
       return { reservation, checkIn };

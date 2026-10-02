@@ -15,16 +15,8 @@ export class GuestsController {
 
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST)
   @Get()
-  findAll(
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.service.findAll(
-      search,
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
-    );
+  findAll(@Query('search') search?: string, @Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.service.findAll(search, page ? parseInt(page, 10) : undefined, limit ? parseInt(limit, 10) : undefined);
   }
 
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)

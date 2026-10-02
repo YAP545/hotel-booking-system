@@ -1,4 +1,4 @@
-import { useState, useEffect, DragEvent } from 'react';
+import { useState, useEffect, DragEvent, useCallback } from 'react';
 import { reservationsService } from '../services/reservations.service';
 import { roomsService } from '../services/rooms.service';
 import { Card, LoadingState, ErrorState } from './ui';
@@ -28,7 +28,7 @@ export function ReservationTimeline() {
   const startDate = new Date().toISOString().slice(0, 10);
   const days = getDaysArray(startDate, 14);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const [roomsRes, resRes] = await Promise.all([
         roomsService.list({ limit: 50 }),
@@ -41,11 +41,12 @@ export function ReservationTimeline() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
-  }, []);
+  }, [loadData]);
 
   function handleDragStart(resItem: Reservation) {
     setDraggedReservation(resItem);
@@ -58,15 +59,12 @@ export function ReservationTimeline() {
       await reservationsService.update(draggedReservation.id, {
         roomId: targetRoomId,
       });
-      toast.show(
-        `Reservation ${draggedReservation.bookingReference} moved to room successfully.`,
-        'success'
-      );
+      toast.show(`Reservation ${draggedReservation.bookingReference} moved to room successfully.`, 'success');
       await loadData();
     } catch (err: any) {
       toast.show(
         err?.response?.data?.message || err?.message || 'Failed to reassign room. Double-booking prevented.',
-        'error'
+        'error',
       );
     } finally {
       setDraggedReservation(null);
@@ -104,7 +102,7 @@ export function ReservationTimeline() {
         <div className="divide-y divide-slate-100">
           {rooms.map((room) => {
             const roomReservations = reservations.filter(
-              (r) => r.roomId === room.id && r.bookingStatus !== 'CANCELLED'
+              (r) => r.roomId === room.id && r.bookingStatus !== 'CANCELLED',
             );
 
             return (
@@ -135,9 +133,7 @@ export function ReservationTimeline() {
                       </div>
                     </div>
                   ))}
-                  {roomReservations.length === 0 && (
-                    <div className="text-xs text-slate-300 px-3 italic">Available</div>
-                  )}
+                  {roomReservations.length === 0 && <div className="text-xs text-slate-300 px-3 italic">Available</div>}
                 </div>
               </div>
             );

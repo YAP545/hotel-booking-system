@@ -18,7 +18,7 @@ describe('DynamicPricingService', () => {
 
   it('applies 20% surge when occupancy >= 80%', () => {
     const result = service.calculatePrice(100, '2026-10-05', '2026-10-07', 85);
-    expect(result.occupancyMultiplier).toBe(1.20);
+    expect(result.occupancyMultiplier).toBe(1.2);
     expect(result.subtotal).toBe(240);
   });
 

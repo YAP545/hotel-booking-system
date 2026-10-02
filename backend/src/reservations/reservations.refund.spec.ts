@@ -64,7 +64,6 @@ describe('ReservationsService Cancellation Refund Calculation', () => {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(null),
       }),
-
     };
   };
 

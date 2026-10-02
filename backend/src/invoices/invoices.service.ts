@@ -28,10 +28,7 @@ export class InvoicesService {
     return invoice;
   }
 
-  async findByReservation(
-    reservationId: string,
-    currentUser?: { id: string; email?: string; role?: UserRole },
-  ) {
+  async findByReservation(reservationId: string, currentUser?: { id: string; email?: string; role?: UserRole }) {
     const invoice = await this.repo.findOne({
       where: { reservationId },
       relations: ['reservation', 'reservation.guest'],

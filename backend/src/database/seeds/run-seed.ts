@@ -61,13 +61,19 @@ async function seed() {
       console.log(`Created user ${u.email}`);
     }
   }
-  const receptionist = await userRepo.findOneByOrFail({ email: 'reception@hotel.com' });
+  // No longer fetching receptionist as it is unused
 
   // --- Room types ---
   const roomTypeDefs = [
     { name: 'Standard', capacity: 2, basePrice: 2500, amenities: ['WiFi', 'TV', 'AC'], count: 8 },
     { name: 'Deluxe', capacity: 3, basePrice: 4000, amenities: ['WiFi', 'TV', 'AC', 'Mini Bar'], count: 6 },
-    { name: 'Suite', capacity: 4, basePrice: 7000, amenities: ['WiFi', 'TV', 'AC', 'Mini Bar', 'Lounge Access'], count: 4 },
+    {
+      name: 'Suite',
+      capacity: 4,
+      basePrice: 7000,
+      amenities: ['WiFi', 'TV', 'AC', 'Mini Bar', 'Lounge Access'],
+      count: 4,
+    },
     { name: 'Family', capacity: 5, basePrice: 6000, amenities: ['WiFi', 'TV', 'AC', 'Extra Beds'], count: 2 },
   ];
 
@@ -114,10 +120,21 @@ async function seed() {
 
   // --- Guests (15) ---
   const guestNames = [
-    ['Aarav', 'Sharma'], ['Vivaan', 'Patel'], ['Aditya', 'Reddy'], ['Vihaan', 'Iyer'],
-    ['Arjun', 'Nair'], ['Sai', 'Rao'], ['Ananya', 'Gupta'], ['Diya', 'Menon'],
-    ['Ishaan', 'Verma'], ['Kavya', 'Joshi'], ['Aryan', 'Kulkarni'], ['Meera', 'Desai'],
-    ['Rohan', 'Kapoor'], ['Priya', 'Bhat'], ['Kabir', 'Chauhan'],
+    ['Aarav', 'Sharma'],
+    ['Vivaan', 'Patel'],
+    ['Aditya', 'Reddy'],
+    ['Vihaan', 'Iyer'],
+    ['Arjun', 'Nair'],
+    ['Sai', 'Rao'],
+    ['Ananya', 'Gupta'],
+    ['Diya', 'Menon'],
+    ['Ishaan', 'Verma'],
+    ['Kavya', 'Joshi'],
+    ['Aryan', 'Kulkarni'],
+    ['Meera', 'Desai'],
+    ['Rohan', 'Kapoor'],
+    ['Priya', 'Bhat'],
+    ['Kabir', 'Chauhan'],
   ];
   const existingGuestCount = await guestRepo.count();
   const guests: Guest[] = [];

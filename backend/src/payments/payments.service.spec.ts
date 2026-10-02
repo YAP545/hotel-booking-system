@@ -27,7 +27,7 @@ describe('PaymentsService', () => {
     };
 
     fakeManager = {
-      findOne: jest.fn().mockImplementation((entity, opts) => {
+      findOne: jest.fn().mockImplementation((entity) => {
         if (entity === Reservation) return Promise.resolve(reservationRecord);
         return Promise.resolve(null);
       }),
@@ -66,14 +66,10 @@ describe('PaymentsService', () => {
       ),
       verifySignature: jest
         .fn()
-        .mockImplementation(
-          (orderId, paymentId, signature) => signature === 'valid_test_signature',
-        ),
+        .mockImplementation((orderId, paymentId, signature) => signature === 'valid_test_signature'),
       verifyWebhookSignature: jest
         .fn()
-        .mockImplementation(
-          (payload, signature) => signature === 'valid_webhook_signature',
-        ),
+        .mockImplementation((payload, signature) => signature === 'valid_webhook_signature'),
     };
 
     paymentsRepoMock = {
@@ -232,9 +228,7 @@ describe('PaymentsService', () => {
 
     it('rejects webhook with invalid signature', async () => {
       const payload = JSON.stringify({ event: 'payment.captured' });
-      await expect(
-        service.processRazorpayWebhook(payload, 'invalid_signature'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processRazorpayWebhook(payload, 'invalid_signature')).rejects.toThrow(BadRequestException);
     });
   });
 });

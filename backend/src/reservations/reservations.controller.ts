@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
@@ -72,21 +63,13 @@ export class ReservationsController {
 
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST)
   @Patch('reservations/:id')
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateReservationDto,
-    @CurrentUser() user: CurrentUserDto,
-  ) {
+  update(@Param('id') id: string, @Body() dto: UpdateReservationDto, @CurrentUser() user: CurrentUserDto) {
     return this.reservationsService.update(id, dto, user);
   }
 
   @Roles(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.CUSTOMER)
   @Post('reservations/:id/cancel')
-  cancel(
-    @Param('id') id: string,
-    @Body() dto: CancelReservationDto,
-    @CurrentUser() user: CurrentUserDto,
-  ) {
+  cancel(@Param('id') id: string, @Body() dto: CancelReservationDto, @CurrentUser() user: CurrentUserDto) {
     return this.reservationsService.cancel(id, dto, user);
   }
 }

@@ -24,11 +24,7 @@ export enum BookingStatus {
 
 // Reservation statuses that still "occupy" a room's calendar and therefore
 // must be checked for date-overlap when validating availability.
-export const ACTIVE_BOOKING_STATUSES = [
-  BookingStatus.PENDING,
-  BookingStatus.CONFIRMED,
-  BookingStatus.CHECKED_IN,
-];
+export const ACTIVE_BOOKING_STATUSES = [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN];
 
 export enum PaymentMethod {
   CASH = 'CASH',

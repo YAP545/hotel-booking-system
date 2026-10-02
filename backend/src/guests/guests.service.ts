@@ -21,10 +21,9 @@ export class GuestsService {
       .take(limit);
 
     if (search) {
-      qb.where(
-        '(guest.first_name LIKE :s OR guest.last_name LIKE :s OR guest.email LIKE :s OR guest.phone LIKE :s)',
-        { s: `%${search}%` },
-      );
+      qb.where('(guest.first_name LIKE :s OR guest.last_name LIKE :s OR guest.email LIKE :s OR guest.phone LIKE :s)', {
+        s: `%${search}%`,
+      });
     }
 
     const [data, total] = await qb.getManyAndCount();
@@ -55,9 +54,7 @@ export class GuestsService {
       totalNights += nights;
     });
 
-    const totalSpent = Number(
-      completed.reduce((sum, r) => sum + Number(r.totalAmount), 0).toFixed(2),
-    );
+    const totalSpent = Number(completed.reduce((sum, r) => sum + Number(r.totalAmount), 0).toFixed(2));
 
     const isVip = totalSpent >= 1000 || completedStays >= 3;
     let loyaltyTier: 'STANDARD' | 'SILVER' | 'GOLD' | 'PLATINUM' = 'STANDARD';

@@ -11,7 +11,11 @@ export class UsersService {
 
   async findAll() {
     const users = await this.repo.find({ order: { createdAt: 'DESC' } });
-    return users.map(({ passwordHash, ...safe }) => safe);
+    return users.map((u) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { passwordHash, ...safe } = u;
+      return safe;
+    });
   }
 
   async create(dto: CreateUserDto) {
@@ -26,6 +30,7 @@ export class UsersService {
       phone: dto.phone,
     });
     const saved = await this.repo.save(user);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _omit, ...safe } = saved;
     return safe;
   }
@@ -35,6 +40,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found.');
     Object.assign(user, dto);
     const saved = await this.repo.save(user);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _omit, ...safe } = saved;
     return safe;
   }

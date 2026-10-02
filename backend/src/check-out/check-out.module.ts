@@ -12,12 +12,8 @@ import { PaymentsModule } from '../payments/payments.module';
 import { EmailService } from '../common/services/email.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([CheckOut, Reservation, Invoice, Payment, AuditLog]),
-    PaymentsModule,
-  ],
+  imports: [TypeOrmModule.forFeature([CheckOut, Reservation, Invoice, Payment, AuditLog]), PaymentsModule],
   controllers: [CheckOutController],
   providers: [CheckOutService, AuditLogService, EmailService],
 })
 export class CheckOutModule {}
-

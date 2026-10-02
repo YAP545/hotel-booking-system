@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { roomsService } from '../services/rooms.service';
 import { RoomStatusBadge } from './StatusBadges';
 import { useSocket } from '../hooks/useSocket';
@@ -21,7 +21,7 @@ export function RoomStatusBoard() {
   const [error, setError] = useState<string | null>(null);
   const [lastLiveEvent, setLastLiveEvent] = useState<string | null>(null);
 
-  async function loadRooms() {
+  const loadRooms = useCallback(async () => {
     try {
       const res = await roomsService.list({ limit: 100 });
       setRooms(res.data);
@@ -30,18 +30,17 @@ export function RoomStatusBoard() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadRooms();
-  }, []);
+  }, [loadRooms]);
 
   useSocket({
     'room.status_changed': (data: { roomId: string; roomNumber: string; status: import('../types').RoomStatus }) => {
       setRooms((prevRooms) =>
-        prevRooms.map((room) =>
-          room.id === data.roomId ? { ...room, status: data.status } : room
-        )
+        prevRooms.map((room) => (room.id === data.roomId ? { ...room, status: data.status } : room)),
       );
       setLastLiveEvent(`Room ${data.roomNumber} status updated to ${data.status}`);
       setTimeout(() => setLastLiveEvent(null), 4000);
@@ -81,9 +80,7 @@ export function RoomStatusBoard() {
         const floorRooms = rooms.filter((r) => r.floor === floor);
         return (
           <Card key={floor} className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-              Floor {floor}
-            </h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Floor {floor}</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
               {floorRooms.map((room) => (
                 <div
@@ -95,9 +92,7 @@ export function RoomStatusBoard() {
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold">Room {room.roomNumber}</span>
                   </div>
-                  <div className="mt-2 text-xs font-medium opacity-85">
-                    {room.roomType?.name || 'Standard'}
-                  </div>
+                  <div className="mt-2 text-xs font-medium opacity-85">{room.roomType?.name || 'Standard'}</div>
                   <div className="mt-3">
                     <RoomStatusBadge status={room.status} />
                   </div>

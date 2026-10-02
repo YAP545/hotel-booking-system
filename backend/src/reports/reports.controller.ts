@@ -18,8 +18,7 @@ export class ReportsController {
 
   private defaultRange(fromDate?: string, toDate?: string) {
     const to = toDate || new Date().toISOString().slice(0, 10);
-    const from =
-      fromDate || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    const from = fromDate || new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
     return { from, to };
   }
 

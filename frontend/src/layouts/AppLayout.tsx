@@ -32,7 +32,12 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
   { label: 'My Bookings', to: '/my-bookings', icon: <CalendarRange className="h-5 w-5" />, roles: ['CUSTOMER'] },
-  { label: 'Reservations', to: '/reservations', icon: <CalendarRange className="h-5 w-5" />, roles: ['ADMIN', 'RECEPTIONIST'] },
+  {
+    label: 'Reservations',
+    to: '/reservations',
+    icon: <CalendarRange className="h-5 w-5" />,
+    roles: ['ADMIN', 'RECEPTIONIST'],
+  },
   { label: 'Rooms', to: '/rooms', icon: <BedDouble className="h-5 w-5" /> },
   { label: 'Guests', to: '/guests', icon: <Users className="h-5 w-5" />, roles: ['ADMIN', 'RECEPTIONIST'] },
   { label: 'Payments', to: '/payments', icon: <CreditCard className="h-5 w-5" />, roles: ['ADMIN', 'RECEPTIONIST'] },
@@ -85,9 +90,7 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex">
-        {sidebarContent}
-      </aside>
+      <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex">{sidebarContent}</aside>
 
       {drawerOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -151,10 +154,7 @@ export function AppLayout() {
         </main>
       </div>
 
-      {changePasswordOpen && (
-        <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />
-      )}
+      {changePasswordOpen && <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />}
     </div>
   );
 }
-

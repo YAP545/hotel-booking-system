@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, BedDouble, Check, Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
-import { Input, PrimaryButton, SecondaryButton, Select } from './ui';
+import { Input, PrimaryButton, SecondaryButton } from './ui';
 import { roomsService } from '../services/rooms.service';
 import { guestsService } from '../services/guests.service';
 import { reservationsService } from '../services/reservations.service';
@@ -101,7 +101,9 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
           const active = stepKeys.indexOf(step) >= i;
           return (
             <div key={label} className="flex items-center gap-2">
-              <span className={`flex h-6 w-6 items-center justify-center rounded-full ${active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full ${active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400'}`}
+              >
                 {i + 1}
               </span>
               <span className={active ? 'text-slate-700' : ''}>{label}</span>
@@ -116,10 +118,29 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
       {step === 'search' && (
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Check-in date" type="date" required value={checkInDate} onChange={(e) => setCheckInDate(e.target.value)} />
-            <Input label="Check-out date" type="date" required value={checkOutDate} onChange={(e) => setCheckOutDate(e.target.value)} />
+            <Input
+              label="Check-in date"
+              type="date"
+              required
+              value={checkInDate}
+              onChange={(e) => setCheckInDate(e.target.value)}
+            />
+            <Input
+              label="Check-out date"
+              type="date"
+              required
+              value={checkOutDate}
+              onChange={(e) => setCheckOutDate(e.target.value)}
+            />
           </div>
-          <Input label="Number of guests" type="number" min={1} required value={guestsCount} onChange={(e) => setGuestsCount(e.target.value)} />
+          <Input
+            label="Number of guests"
+            type="number"
+            min={1}
+            required
+            value={guestsCount}
+            onChange={(e) => setGuestsCount(e.target.value)}
+          />
           <div className="flex justify-end pt-2">
             <PrimaryButton type="submit" disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
@@ -148,7 +169,9 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
                 <div className="flex items-center gap-3">
                   <BedDouble className="h-5 w-5 text-brand-600" />
                   <div>
-                    <p className="font-medium text-slate-900">Room {room.roomNumber} — {room.roomType.name}</p>
+                    <p className="font-medium text-slate-900">
+                      Room {room.roomNumber} — {room.roomType.name}
+                    </p>
                     <p className="text-xs text-slate-500">
                       Capacity {room.roomType.capacity} · {room.roomType.amenities?.join(', ')}
                     </p>
@@ -156,13 +179,17 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-slate-900">₹{room.pricePerNight}/night</p>
-                  <p className="text-xs text-slate-500">{room.nights} nights · ₹{room.estimatedSubtotal}</p>
+                  <p className="text-xs text-slate-500">
+                    {room.nights} nights · ₹{room.estimatedSubtotal}
+                  </p>
                 </div>
               </button>
             ))}
           </div>
           <div className="mt-6 flex justify-between">
-            <SecondaryButton onClick={() => setStep('search')}><ArrowLeft className="h-4 w-4" /> Back</SecondaryButton>
+            <SecondaryButton onClick={() => setStep('search')}>
+              <ArrowLeft className="h-4 w-4" /> Back
+            </SecondaryButton>
             <PrimaryButton onClick={() => setStep('guest')} disabled={!canProceedToGuest}>
               Next <ArrowRight className="h-4 w-4" />
             </PrimaryButton>
@@ -190,7 +217,12 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
           {guestMode === 'search' ? (
             <div>
               <div className="flex gap-2">
-                <Input placeholder="Search by name, email or phone" value={guestSearch} onChange={(e) => setGuestSearch(e.target.value)} className="flex-1" />
+                <Input
+                  placeholder="Search by name, email or phone"
+                  value={guestSearch}
+                  onChange={(e) => setGuestSearch(e.target.value)}
+                  className="flex-1"
+                />
                 <SecondaryButton onClick={handleGuestSearch}>Search</SecondaryButton>
               </div>
               <div className="mt-3 max-h-48 space-y-2 overflow-y-auto">
@@ -200,7 +232,9 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
                     onClick={() => setSelectedGuest(g)}
                     className={`flex w-full items-center justify-between rounded-lg border p-3 text-left text-sm ${selectedGuest?.id === g.id ? 'border-brand-500 bg-brand-50' : 'border-slate-200 hover:bg-slate-50'}`}
                   >
-                    <span>{g.firstName} {g.lastName} · {g.phone}</span>
+                    <span>
+                      {g.firstName} {g.lastName} · {g.phone}
+                    </span>
                     {selectedGuest?.id === g.id && <Check className="h-4 w-4 text-brand-600" />}
                   </button>
                 ))}
@@ -208,17 +242,43 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
-              <Input label="First name" required value={newGuest.firstName} onChange={(e) => setNewGuest({ ...newGuest, firstName: e.target.value })} />
-              <Input label="Last name" required value={newGuest.lastName} onChange={(e) => setNewGuest({ ...newGuest, lastName: e.target.value })} />
-              <Input label="Phone" required value={newGuest.phone} onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })} />
-              <Input label="Email" type="email" value={newGuest.email} onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })} />
+              <Input
+                label="First name"
+                required
+                value={newGuest.firstName}
+                onChange={(e) => setNewGuest({ ...newGuest, firstName: e.target.value })}
+              />
+              <Input
+                label="Last name"
+                required
+                value={newGuest.lastName}
+                onChange={(e) => setNewGuest({ ...newGuest, lastName: e.target.value })}
+              />
+              <Input
+                label="Phone"
+                required
+                value={newGuest.phone}
+                onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })}
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={newGuest.email}
+                onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
+              />
             </div>
           )}
 
-          <Input label="Special requests (optional)" value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} />
+          <Input
+            label="Special requests (optional)"
+            value={specialRequests}
+            onChange={(e) => setSpecialRequests(e.target.value)}
+          />
 
           <div className="flex justify-between pt-2">
-            <SecondaryButton onClick={() => setStep('select')}><ArrowLeft className="h-4 w-4" /> Back</SecondaryButton>
+            <SecondaryButton onClick={() => setStep('select')}>
+              <ArrowLeft className="h-4 w-4" /> Back
+            </SecondaryButton>
             <PrimaryButton onClick={() => setStep('summary')} disabled={!canProceedToSummary}>
               Next <ArrowRight className="h-4 w-4" />
             </PrimaryButton>
@@ -233,10 +293,14 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
             <div className="grid grid-cols-2 gap-y-1 text-slate-600">
               <span>Guest</span>
               <span className="text-right font-medium text-slate-900">
-                {guestMode === 'new' ? `${newGuest.firstName} ${newGuest.lastName}` : `${selectedGuest?.firstName} ${selectedGuest?.lastName}`}
+                {guestMode === 'new'
+                  ? `${newGuest.firstName} ${newGuest.lastName}`
+                  : `${selectedGuest?.firstName} ${selectedGuest?.lastName}`}
               </span>
               <span>Room</span>
-              <span className="text-right font-medium text-slate-900">{selectedRoom.roomNumber} — {selectedRoom.roomType.name}</span>
+              <span className="text-right font-medium text-slate-900">
+                {selectedRoom.roomNumber} — {selectedRoom.roomType.name}
+              </span>
               <span>Check-in</span>
               <span className="text-right">{checkInDate}</span>
               <span>Check-out</span>
@@ -246,13 +310,19 @@ export function BookingWizard({ onClose, onCreated }: { onClose: () => void; onC
               <span>Price/night</span>
               <span className="text-right">₹{selectedRoom.pricePerNight}</span>
               <span className="mt-2 border-t pt-2 font-semibold text-slate-800">Estimated Subtotal</span>
-              <span className="mt-2 border-t pt-2 text-right font-semibold text-slate-900">₹{selectedRoom.estimatedSubtotal}</span>
+              <span className="mt-2 border-t pt-2 text-right font-semibold text-slate-900">
+                ₹{selectedRoom.estimatedSubtotal}
+              </span>
             </div>
-            <p className="mt-2 text-xs text-slate-400">Final tax and total are calculated by the server upon confirmation.</p>
+            <p className="mt-2 text-xs text-slate-400">
+              Final tax and total are calculated by the server upon confirmation.
+            </p>
           </div>
 
           <div className="flex justify-between pt-2">
-            <SecondaryButton onClick={() => setStep('guest')}><ArrowLeft className="h-4 w-4" /> Back</SecondaryButton>
+            <SecondaryButton onClick={() => setStep('guest')}>
+              <ArrowLeft className="h-4 w-4" /> Back
+            </SecondaryButton>
             <PrimaryButton onClick={handleConfirm} disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirm Reservation

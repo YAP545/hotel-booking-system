@@ -25,7 +25,6 @@ export class AppCacheService {
     }
   }
 
-
   // Domain-specific invalidation helpers
   async invalidateDashboard(): Promise<void> {
     await this.del('reports_dashboard');

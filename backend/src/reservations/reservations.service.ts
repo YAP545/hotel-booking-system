@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, Repository, Between, ILike } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Reservation } from './reservation.entity';
 import { Room } from '../rooms/room.entity';
 import { Guest } from '../guests/guest.entity';
@@ -17,10 +17,18 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { SearchAvailabilityDto } from './dto/search-availability.dto';
 import { CancelReservationDto } from './dto/cancel-reservation.dto';
-import { ACTIVE_BOOKING_STATUSES, BookingStatus, CancellationStatus, RoomStatus, UserRole, PaymentMethod, PaymentStatus } from '../common/enums';
+import {
+  ACTIVE_BOOKING_STATUSES,
+  BookingStatus,
+  CancellationStatus,
+  RoomStatus,
+  UserRole,
+  PaymentMethod,
+  PaymentStatus,
+} from '../common/enums';
 
 import { generateBookingReference } from '../common/utils/booking-reference';
-import { dateRangesOverlap } from '../common/utils/date-overlap';
+
 import { AuditLogService } from '../common/services/audit-log.service';
 import { EventsGateway } from '../common/gateways/events.gateway';
 import { DynamicPricingService } from '../common/services/dynamic-pricing.service';
@@ -145,10 +153,7 @@ export class ReservationsService {
     });
   }
 
-  async create(
-    dto: CreateReservationDto,
-    currentUser: { id: string; name?: string; email?: string; role?: UserRole },
-  ) {
+  async create(dto: CreateReservationDto, currentUser: { id: string; name?: string; email?: string; role?: UserRole }) {
     if (new Date(dto.checkOutDate) <= new Date(dto.checkInDate)) {
       throw new BadRequestException('Check-out date must be later than check-in date.');
     }
@@ -170,9 +175,7 @@ export class ReservationsService {
         throw new ConflictException('This room is currently not available for booking.');
       }
       if (dto.numberOfGuests > room.roomType.capacity) {
-        throw new BadRequestException(
-          `This room type accommodates a maximum of ${room.roomType.capacity} guest(s).`,
-        );
+        throw new BadRequestException(`This room type accommodates a maximum of ${room.roomType.capacity} guest(s).`);
       }
 
       // Customer Role Ownership Guard: Ignore client-provided guestId and force user's Guest record
@@ -205,17 +208,9 @@ export class ReservationsService {
         }
       }
 
-      const overlap = await this.hasOverlap(
-        dto.roomId,
-        dto.checkInDate,
-        dto.checkOutDate,
-        undefined,
-        manager,
-      );
+      const overlap = await this.hasOverlap(dto.roomId, dto.checkInDate, dto.checkOutDate, undefined, manager);
       if (overlap) {
-        throw new ConflictException(
-          `Room ${room.roomNumber} is no longer available for the selected dates.`,
-        );
+        throw new ConflictException(`Room ${room.roomNumber} is no longer available for the selected dates.`);
       }
 
       const settings = await this.getSettings();
@@ -267,7 +262,6 @@ export class ReservationsService {
         .getCount();
       const randSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
       const bookingReference = `${generateBookingReference(todaysCount)}-${randSuffix}`;
-
 
       const reservation = manager.create(Reservation, {
         bookingReference,
@@ -402,14 +396,11 @@ export class ReservationsService {
       const totalPaid = Number(paidSum || 0);
 
       const settings = await this.getSettings();
-      const hoursUntilCheckIn =
-        (new Date(reservation.checkInDate).getTime() - Date.now()) / (1000 * 60 * 60);
+      const hoursUntilCheckIn = (new Date(reservation.checkInDate).getTime() - Date.now()) / (1000 * 60 * 60);
 
       let fee = 0;
       if (hoursUntilCheckIn < settings.freeCancellationHours) {
-        fee = Number(
-          ((Number(reservation.totalAmount) * Number(settings.cancellationFeePercent)) / 100).toFixed(2),
-        );
+        fee = Number(((Number(reservation.totalAmount) * Number(settings.cancellationFeePercent)) / 100).toFixed(2));
       }
 
       // Compute refund = max(0, min(totalPaid - fee, totalPaid))
@@ -441,8 +432,6 @@ export class ReservationsService {
         });
         await manager.save(refundPayment);
       }
-
-
 
       // Free up the room if it was held for this booking and isn't mid-stay
       // for another guest.
@@ -521,22 +510,12 @@ export class ReservationsService {
 
       const guestsCount = dto.numberOfGuests ?? reservation.numberOfGuests;
       if (guestsCount > room.roomType.capacity) {
-        throw new BadRequestException(
-          `This room type accommodates a maximum of ${room.roomType.capacity} guest(s).`,
-        );
+        throw new BadRequestException(`This room type accommodates a maximum of ${room.roomType.capacity} guest(s).`);
       }
 
-      const overlap = await this.hasOverlap(
-        newRoomId,
-        newCheckIn,
-        newCheckOut,
-        reservation.id,
-        manager,
-      );
+      const overlap = await this.hasOverlap(newRoomId, newCheckIn, newCheckOut, reservation.id, manager);
       if (overlap) {
-        throw new ConflictException(
-          `Room ${room.roomNumber} is unavailable for the specified dates.`,
-        );
+        throw new ConflictException(`Room ${room.roomNumber} is unavailable for the specified dates.`);
       }
 
       if (dto.guestId && dto.guestId !== reservation.guestId) {
@@ -555,12 +534,7 @@ export class ReservationsService {
       });
       const occupancyRate = totalRooms > 0 ? (busyRooms / totalRooms) * 100 : 0;
       const basePrice = Number(room.price ?? room.roomType.basePrice);
-      const pricing = this.dynamicPricing.calculatePrice(
-        basePrice,
-        newCheckIn,
-        newCheckOut,
-        occupancyRate,
-      );
+      const pricing = this.dynamicPricing.calculatePrice(basePrice, newCheckIn, newCheckOut, occupancyRate);
 
       const subtotal = pricing.subtotal;
       const discount = dto.discount !== undefined ? Number(dto.discount) : Number(reservation.discount ?? 0);

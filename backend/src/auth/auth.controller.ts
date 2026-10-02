@@ -52,6 +52,3 @@ export class AuthController {
     return this.authService.changePassword(userId, dto);
   }
 }
-
-
-

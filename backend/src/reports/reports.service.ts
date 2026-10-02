@@ -34,10 +34,7 @@ export class ReportsService {
       where: { checkOutDate: today, bookingStatus: BookingStatus.CHECKED_IN },
     });
     const activeReservations = await this.reservationsRepo.count({
-      where: [
-        { bookingStatus: BookingStatus.CONFIRMED },
-        { bookingStatus: BookingStatus.CHECKED_IN },
-      ],
+      where: [{ bookingStatus: BookingStatus.CONFIRMED }, { bookingStatus: BookingStatus.CHECKED_IN }],
     });
 
     const { sum: todaysRevenue } = await this.paymentsRepo
@@ -195,13 +192,13 @@ export class ReportsService {
   }
 
   async bookings(fromDate: string, toDate: string) {
-    return this.reservationsRepo.find({
-      where: [],
-      relations: ['guest', 'room'],
-      order: { createdAt: 'DESC' },
-    }).then((all) =>
-      all.filter((r) => r.checkInDate >= fromDate && r.checkInDate <= toDate),
-    );
+    return this.reservationsRepo
+      .find({
+        where: [],
+        relations: ['guest', 'room'],
+        order: { createdAt: 'DESC' },
+      })
+      .then((all) => all.filter((r) => r.checkInDate >= fromDate && r.checkInDate <= toDate));
   }
 
   async cancellations(fromDate: string, toDate: string) {
@@ -240,7 +237,6 @@ export class ReportsService {
       .getRawMany();
   }
 
-
   async exportRevenueCsv(fromDate: string, toDate: string): Promise<string> {
     const data = await this.revenue(fromDate, toDate);
     const rows = ['Date,Total Revenue ($)'];
@@ -261,7 +257,9 @@ export class ReportsService {
     data.forEach((r) => {
       const guestName = r.guest ? `${r.guest.firstName} ${r.guest.lastName}` : 'N/A';
       const roomNum = r.room ? r.room.roomNumber : 'N/A';
-      rows.push(`"${r.bookingReference}","${guestName}","${roomNum}",${r.checkInDate},${r.checkOutDate},${r.bookingStatus},${r.totalAmount}`);
+      rows.push(
+        `"${r.bookingReference}","${guestName}","${roomNum}",${r.checkInDate},${r.checkOutDate},${r.bookingStatus},${r.totalAmount}`,
+      );
     });
     return rows.join('\n');
   }

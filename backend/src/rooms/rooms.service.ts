@@ -54,7 +54,11 @@ export class RoomsService {
     if (existing) throw new ConflictException('A room with this number already exists.');
     const room = this.repo.create(dto);
     const saved = await this.repo.save(room);
-    this.eventsGateway.broadcastRoomStatusChanged({ roomId: saved.id, roomNumber: saved.roomNumber, status: saved.status });
+    this.eventsGateway.broadcastRoomStatusChanged({
+      roomId: saved.id,
+      roomNumber: saved.roomNumber,
+      status: saved.status,
+    });
     return saved;
   }
 
@@ -64,11 +68,7 @@ export class RoomsService {
 
     // Guard against manually setting a room OCCUPIED/RESERVED without a real
     // booking backing it — those transitions belong to check-in/reservation flows.
-    if (
-      dto.status &&
-      [RoomStatus.OCCUPIED, RoomStatus.RESERVED].includes(dto.status) &&
-      room.status !== dto.status
-    ) {
+    if (dto.status && [RoomStatus.OCCUPIED, RoomStatus.RESERVED].includes(dto.status) && room.status !== dto.status) {
       const hasActiveReservationToday = await this.reservationsRepo
         .createQueryBuilder('r')
         .where('r.room_id = :id', { id })
@@ -85,7 +85,11 @@ export class RoomsService {
     Object.assign(room, dto);
     const saved = await this.repo.save(room);
     if (oldStatus !== saved.status) {
-      this.eventsGateway.broadcastRoomStatusChanged({ roomId: saved.id, roomNumber: saved.roomNumber, status: saved.status });
+      this.eventsGateway.broadcastRoomStatusChanged({
+        roomId: saved.id,
+        roomNumber: saved.roomNumber,
+        status: saved.status,
+      });
     }
     return saved;
   }
@@ -97,11 +101,14 @@ export class RoomsService {
       room.isActive = false;
       room.status = RoomStatus.OUT_OF_SERVICE;
       await this.repo.save(room);
-      this.eventsGateway.broadcastRoomStatusChanged({ roomId: room.id, roomNumber: room.roomNumber, status: room.status });
+      this.eventsGateway.broadcastRoomStatusChanged({
+        roomId: room.id,
+        roomNumber: room.roomNumber,
+        status: room.status,
+      });
       return { message: 'Room has booking history and was deactivated instead of deleted.' };
     }
     await this.repo.remove(room);
     return { message: 'Room deleted.' };
   }
 }
-

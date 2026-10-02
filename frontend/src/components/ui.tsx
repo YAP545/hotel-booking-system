@@ -58,9 +58,7 @@ export function EmptyState({
 }
 
 export function ErrorState({ message }: { message: string }) {
-  return (
-    <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">{message}</div>
-  );
+  return <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">{message}</div>;
 }
 
 export function PrimaryButton({

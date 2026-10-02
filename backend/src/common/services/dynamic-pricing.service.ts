@@ -48,10 +48,7 @@ export class DynamicPricingService {
     };
 
     const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
-    const signature = crypto
-      .createHmac('sha256', this.secretKey)
-      .update(payloadB64)
-      .digest('hex');
+    const signature = crypto.createHmac('sha256', this.secretKey).update(payloadB64).digest('hex');
 
     return `${payloadB64}.${signature}`;
   }
@@ -63,17 +60,12 @@ export class DynamicPricingService {
     if (!token || !token.includes('.')) return null;
 
     const [payloadB64, signature] = token.split('.');
-    const expectedSig = crypto
-      .createHmac('sha256', this.secretKey)
-      .update(payloadB64)
-      .digest('hex');
+    const expectedSig = crypto.createHmac('sha256', this.secretKey).update(payloadB64).digest('hex');
 
     if (signature !== expectedSig) return null;
 
     try {
-      const payload: QuotePayload = JSON.parse(
-        Buffer.from(payloadB64, 'base64url').toString('utf8'),
-      );
+      const payload: QuotePayload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
       if (Date.now() > payload.expiresAt) return null;
       return payload;
     } catch {
@@ -100,9 +92,9 @@ export class DynamicPricingService {
     // 1. Occupancy Surge Multiplier
     let occupancyMultiplier = 1.0;
     if (occupancyRate >= 80) {
-      occupancyMultiplier = 1.20; // +20% surge for high demand (>80%)
+      occupancyMultiplier = 1.2; // +20% surge for high demand (>80%)
     } else if (occupancyRate >= 50) {
-      occupancyMultiplier = 1.10; // +10% surge for moderate demand (50-80%)
+      occupancyMultiplier = 1.1; // +10% surge for moderate demand (50-80%)
     }
 
     let totalSubtotal = 0;
@@ -127,14 +119,7 @@ export class DynamicPricingService {
     const averagePricePerNight = Number((roundedSubtotal / nights).toFixed(2));
 
     const quoteToken = roomId
-      ? this.generateQuoteToken(
-          roomId,
-          checkInDateStr,
-          checkOutDateStr,
-          roundedSubtotal,
-          averagePricePerNight,
-          nights,
-        )
+      ? this.generateQuoteToken(roomId, checkInDateStr, checkOutDateStr, roundedSubtotal, averagePricePerNight, nights)
       : undefined;
 
     return {
@@ -148,4 +133,3 @@ export class DynamicPricingService {
     };
   }
 }
-

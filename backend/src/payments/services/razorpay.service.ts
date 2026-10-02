@@ -38,7 +38,8 @@ export class RazorpayService {
   constructor(private configService: ConfigService) {
     this.keyId = this.configService.get<string>('RAZORPAY_KEY_ID') || process.env.RAZORPAY_KEY_ID || '';
     this.keySecret = this.configService.get<string>('RAZORPAY_KEY_SECRET') || process.env.RAZORPAY_KEY_SECRET || '';
-    this.webhookSecret = this.configService.get<string>('RAZORPAY_WEBHOOK_SECRET') || process.env.RAZORPAY_WEBHOOK_SECRET || '';
+    this.webhookSecret =
+      this.configService.get<string>('RAZORPAY_WEBHOOK_SECRET') || process.env.RAZORPAY_WEBHOOK_SECRET || '';
 
     if (!this.keyId || this.keyId === 'rzp_test_placeholder_key' || this.keyId === 'rzp_test_xxxx') {
       this.missingConfigVars.push('RAZORPAY_KEY_ID');
@@ -72,7 +73,8 @@ export class RazorpayService {
 
   private assertConfigured() {
     if (!this.isConfiguredStatus()) {
-      const missing = this.missingConfigVars.length > 0 ? this.missingConfigVars.join(', ') : 'RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET';
+      const missing =
+        this.missingConfigVars.length > 0 ? this.missingConfigVars.join(', ') : 'RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET';
       throw new BadRequestException(
         `Razorpay configuration incomplete. Missing environment variable(s): ${missing}. Please configure them in backend environment variables (.env).`,
       );
@@ -151,10 +153,7 @@ export class RazorpayService {
     if (!this.keySecret) return false;
 
     const body = `${orderId}|${paymentId}`;
-    const expectedSignature = crypto
-      .createHmac('sha256', this.keySecret)
-      .update(body)
-      .digest('hex');
+    const expectedSignature = crypto.createHmac('sha256', this.keySecret).update(body).digest('hex');
 
     const isValid = expectedSignature === signature;
     if (!isValid) {
@@ -168,10 +167,7 @@ export class RazorpayService {
     const secret = this.webhookSecret || this.keySecret;
     if (!secret) return false;
 
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(rawBody)
-      .digest('hex');
+    const expectedSignature = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
 
     return expectedSignature === signature;
   }

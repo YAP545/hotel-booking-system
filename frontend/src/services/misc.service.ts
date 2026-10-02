@@ -29,7 +29,12 @@ export interface UpdateUserPayload {
 }
 
 export const paymentsService = {
-  create(payload: { reservationId: string; amount: number; paymentMethod: PaymentMethod; transactionReference?: string }) {
+  create(payload: {
+    reservationId: string;
+    amount: number;
+    paymentMethod: PaymentMethod;
+    transactionReference?: string;
+  }) {
     return api.post<Payment>('/payments', payload);
   },
   async createRazorpayOrder(reservationId: string) {
@@ -75,7 +80,6 @@ export const paymentsService = {
     return data;
   },
 };
-
 
 export const invoicesService = {
   async byReservation(reservationId: string): Promise<Invoice> {

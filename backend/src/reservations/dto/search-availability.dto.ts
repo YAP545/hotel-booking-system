@@ -28,4 +28,3 @@ export class SearchAvailabilityDto {
   @Type(() => Number)
   maxPrice?: number;
 }
-

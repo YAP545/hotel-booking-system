@@ -25,7 +25,10 @@ export function useSocket(events: Record<string, (data: any) => void>) {
       });
       socket.disconnect();
     };
+    // Reconnect only when the set of listened event names changes.
+    // `events` is a new object each render, so we stabilize on its keys.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(Object.keys(events))]);
 
-  return socketRef.current;
+  return socketRef;
 }
