@@ -140,6 +140,9 @@ npm install
 cp ../.env.example .env
 # Edit .env with your MySQL and Redis credentials
 
+# Run database migrations (creates the database schema)
+npm run migration:run
+
 # Run database seed (creates demo users & room inventory)
 npm run seed
 
