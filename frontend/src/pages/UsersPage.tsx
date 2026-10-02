@@ -1,8 +1,17 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { usersService } from '../services/misc.service';
 import { AuthUser } from '../types';
-import { Card, ErrorState, Input, LoadingState, PageHeader, PrimaryButton, Select, SecondaryButton } from '../components/ui';
+import {
+  Card,
+  ErrorState,
+  Input,
+  LoadingState,
+  PageHeader,
+  PrimaryButton,
+  Select,
+  SecondaryButton,
+} from '../components/ui';
 import { Modal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
 import { apiErrorMessage } from '../services/api';
@@ -14,7 +23,7 @@ export function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await usersService.list();
@@ -24,9 +33,12 @@ export function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
 
   async function toggleActive(u: AuthUser & { isActive: boolean }) {
     try {
@@ -43,7 +55,11 @@ export function UsersPage() {
       <PageHeader
         title="User Management"
         subtitle="Manage staff accounts and roles"
-        actions={<PrimaryButton onClick={() => setShowForm(true)}><Plus className="h-4 w-4" /> Add User</PrimaryButton>}
+        actions={
+          <PrimaryButton onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4" /> Add User
+          </PrimaryButton>
+        }
       />
 
       {loading && <LoadingState />}
@@ -80,14 +96,28 @@ export function UsersPage() {
         </Card>
       )}
 
-      {showForm && <UserFormModal onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
+      {showForm && (
+        <UserFormModal
+          onClose={() => setShowForm(false)}
+          onSaved={() => {
+            setShowForm(false);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }
 
 function UserFormModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { show } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'RECEPTIONIST' as 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER', phone: '' });
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'RECEPTIONIST' as 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER',
+    phone: '',
+  });
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
@@ -108,16 +138,35 @@ function UserFormModal({ onClose, onSaved }: { onClose: () => void; onSaved: () 
     <Modal title="Add User" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input label="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <Input label="Email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <Input label="Password" type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-        <Select label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER' })}>
+        <Input
+          label="Email"
+          type="email"
+          required
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+        <Input
+          label="Password"
+          type="password"
+          required
+          minLength={6}
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+        />
+        <Select
+          label="Role"
+          value={form.role}
+          onChange={(e) => setForm({ ...form, role: e.target.value as 'ADMIN' | 'RECEPTIONIST' | 'CUSTOMER' })}
+        >
           <option value="ADMIN">Admin</option>
           <option value="RECEPTIONIST">Receptionist</option>
         </Select>
         <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
         <div className="flex justify-end gap-3 pt-2">
           <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
-          <PrimaryButton type="submit" disabled={submitting}>Create User</PrimaryButton>
+          <PrimaryButton type="submit" disabled={submitting}>
+            Create User
+          </PrimaryButton>
         </div>
       </form>
     </Modal>

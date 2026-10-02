@@ -1,4 +1,4 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent, useCallback } from 'react';
 import { Plus, Search, Pencil, Trash2, BedDouble, LayoutGrid, MapPin } from 'lucide-react';
 import { roomsService, roomTypesService } from '../services/rooms.service';
 import { Room, RoomStatus, RoomType } from '../types';
@@ -40,7 +40,7 @@ export function RoomsPage() {
 
   const isAdmin = user?.role === 'ADMIN';
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -60,11 +60,12 @@ export function RoomsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [roomNumber, statusFilter, typeFilter]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- safe: async fetch triggered by dropdown filter change, no infinite loop
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only refetch on dropdown filter change; roomNumber applied via form submit, not on every keystroke
   }, [statusFilter, typeFilter]);
 
   async function handleSearch(e: FormEvent) {
@@ -109,7 +110,12 @@ export function RoomsPage() {
               </button>
             </div>
             {isAdmin && (
-              <PrimaryButton onClick={() => { setEditingRoom(null); setShowForm(true); }}>
+              <PrimaryButton
+                onClick={() => {
+                  setEditingRoom(null);
+                  setShowForm(true);
+                }}
+              >
                 <Plus className="h-4 w-4" /> Add Room
               </PrimaryButton>
             )}
@@ -135,7 +141,9 @@ export function RoomsPage() {
                 <Select label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">All statuses</option>
                   {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                    <option key={s} value={s}>
+                      {s.replace(/_/g, ' ')}
+                    </option>
                   ))}
                 </Select>
               </div>
@@ -143,7 +151,9 @@ export function RoomsPage() {
                 <Select label="Room type" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
                   <option value="">All types</option>
                   {roomTypes.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
                   ))}
                 </Select>
               </div>
@@ -183,10 +193,19 @@ export function RoomsPage() {
                   </div>
                   {isAdmin && (
                     <div className="mt-auto flex gap-2 pt-2">
-                      <SecondaryButton onClick={() => { setEditingRoom(room); setShowForm(true); }} className="flex-1">
+                      <SecondaryButton
+                        onClick={() => {
+                          setEditingRoom(room);
+                          setShowForm(true);
+                        }}
+                        className="flex-1"
+                      >
                         <Pencil className="h-3.5 w-3.5" /> Edit
                       </SecondaryButton>
-                      <SecondaryButton onClick={() => handleDelete(room)} className="flex-1 text-red-600 hover:bg-red-50">
+                      <SecondaryButton
+                        onClick={() => handleDelete(room)}
+                        className="flex-1 text-red-600 hover:bg-red-50"
+                      >
                         <Trash2 className="h-3.5 w-3.5" /> Remove
                       </SecondaryButton>
                     </div>
@@ -203,7 +222,10 @@ export function RoomsPage() {
           room={editingRoom}
           roomTypes={roomTypes}
           onClose={() => setShowForm(false)}
-          onSaved={() => { setShowForm(false); load(); }}
+          onSaved={() => {
+            setShowForm(false);
+            load();
+          }}
         />
       )}
     </div>
@@ -266,7 +288,9 @@ function RoomFormModal({
         <Input label="Room number" required value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} />
         <Select label="Room type" required value={roomTypeId} onChange={(e) => setRoomTypeId(e.target.value)}>
           {roomTypes.map((t) => (
-            <option key={t.id} value={t.id}>{t.name} (₹{t.basePrice}/night)</option>
+            <option key={t.id} value={t.id}>
+              {t.name} (₹{t.basePrice}/night)
+            </option>
           ))}
         </Select>
         <Input label="Floor" type="number" required value={floor} onChange={(e) => setFloor(e.target.value)} />
@@ -280,7 +304,9 @@ function RoomFormModal({
         {room && (
           <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value as RoomStatus)}>
             {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+              <option key={s} value={s}>
+                {s.replace(/_/g, ' ')}
+              </option>
             ))}
           </Select>
         )}

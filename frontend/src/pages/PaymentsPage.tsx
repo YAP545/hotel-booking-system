@@ -42,7 +42,9 @@ export function PaymentsPage() {
                   <td className="px-4 py-3">{p.paidAt ? new Date(p.paidAt).toLocaleString() : '—'}</td>
                   <td className="px-4 py-3 font-medium">₹{p.amount}</td>
                   <td className="px-4 py-3">{p.paymentMethod}</td>
-                  <td className="px-4 py-3"><PaymentStatusBadge status={p.paymentStatus} /></td>
+                  <td className="px-4 py-3">
+                    <PaymentStatusBadge status={p.paymentStatus} />
+                  </td>
                   <td className="px-4 py-3 text-slate-500">{p.transactionReference || '—'}</td>
                 </tr>
               ))}

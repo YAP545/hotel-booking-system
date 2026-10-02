@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { auditLogService } from '../services/audit-log.service';
 import { AuditLog } from '../types';
 import { Card, ErrorState, Input, LoadingState, PageHeader, SecondaryButton, Select } from '../components/ui';
@@ -30,32 +30,37 @@ export function AuditLogPage() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  async function loadLogs(targetPage = 1) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await auditLogService.list({
-        action: action || undefined,
-        userName: userName || undefined,
-        entity: entity || undefined,
-        fromDate: fromDate || undefined,
-        toDate: toDate || undefined,
-        page: targetPage,
-        limit: 20,
-      });
-      setLogs(res.data);
-      setTotal(res.total);
-      setPage(res.page);
-      setTotalPages(res.totalPages);
-    } catch (err) {
-      setError(apiErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const loadLogs = useCallback(
+    async (targetPage = 1) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await auditLogService.list({
+          action: action || undefined,
+          userName: userName || undefined,
+          entity: entity || undefined,
+          fromDate: fromDate || undefined,
+          toDate: toDate || undefined,
+          page: targetPage,
+          limit: 20,
+        });
+        setLogs(res.data);
+        setTotal(res.total);
+        setPage(res.page);
+        setTotalPages(res.totalPages);
+      } catch (err) {
+        setError(apiErrorMessage(err));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [action, entity, fromDate, toDate, userName],
+  );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- safe: async fetch on mount, no infinite loop
     loadLogs(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: fetch once on mount; filters applied on form submit, not on every keystroke
   }, []);
 
   function handleSearch(e: React.FormEvent) {
@@ -74,18 +79,11 @@ export function AuditLogPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Audit Logs"
-        subtitle="System-wide security and operational activity inspection log"
-      />
+      <PageHeader title="Audit Logs" subtitle="System-wide security and operational activity inspection log" />
 
       <Card className="mb-6">
         <form onSubmit={handleSearch} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 items-end">
-          <Select
-            label="Action Filter"
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-          >
+          <Select label="Action Filter" value={action} onChange={(e) => setAction(e.target.value)}>
             {ACTIONS.map((a) => (
               <option key={a.value} value={a.value}>
                 {a.label}
@@ -98,18 +96,8 @@ export function AuditLogPage() {
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
           />
-          <Input
-            label="From Date"
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-          />
-          <Input
-            label="To Date"
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-          />
+          <Input label="From Date" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+          <Input label="To Date" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           <div className="flex items-center gap-2">
             <SecondaryButton type="submit" className="w-full">
               Filter Logs
@@ -165,9 +153,7 @@ export function AuditLogPage() {
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-600 font-mono">
                       {log.entity}#{log.entityId.slice(0, 8)}
                     </td>
-                    <td className="px-4 py-3 text-slate-700 text-xs max-w-md truncate">
-                      {log.description}
-                    </td>
+                    <td className="px-4 py-3 text-slate-700 text-xs max-w-md truncate">{log.description}</td>
                   </tr>
                 ))}
                 {logs.length === 0 && (
@@ -184,19 +170,13 @@ export function AuditLogPage() {
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-slate-200 pt-4 mt-4 text-sm">
-              <SecondaryButton
-                disabled={page <= 1}
-                onClick={() => loadLogs(page - 1)}
-              >
+              <SecondaryButton disabled={page <= 1} onClick={() => loadLogs(page - 1)}>
                 Previous
               </SecondaryButton>
               <span className="text-xs text-slate-500">
                 Page {page} of {totalPages}
               </span>
-              <SecondaryButton
-                disabled={page >= totalPages}
-                onClick={() => loadLogs(page + 1)}
-              >
+              <SecondaryButton disabled={page >= totalPages} onClick={() => loadLogs(page + 1)}>
                 Next
               </SecondaryButton>
             </div>

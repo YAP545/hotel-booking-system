@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Calendar, List } from 'lucide-react';
 import { reservationsService } from '../services/reservations.service';
@@ -34,7 +34,7 @@ export function ReservationsPage() {
   const [showWizard, setShowWizard] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -52,11 +52,12 @@ export function ReservationsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [bookingReference, guestName, page, status]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- safe: async fetch triggered by pagination/status change, no infinite loop
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only refetch on page/status change; bookingReference/guestName applied via form submit, not on every keystroke
   }, [page, status]);
 
   return (
@@ -97,22 +98,44 @@ export function ReservationsPage() {
         <>
           <Card className="mb-4">
             <form
-              onSubmit={(e) => { e.preventDefault(); setPage(1); load(); }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                setPage(1);
+                load();
+              }}
               className="flex flex-col gap-3 sm:flex-row sm:items-end"
             >
               <div className="flex-1">
-                <Input label="Booking reference" placeholder="HTL-..." value={bookingReference} onChange={(e) => setBookingReference(e.target.value)} />
+                <Input
+                  label="Booking reference"
+                  placeholder="HTL-..."
+                  value={bookingReference}
+                  onChange={(e) => setBookingReference(e.target.value)}
+                />
               </div>
               <div className="flex-1">
                 <Input label="Guest name" value={guestName} onChange={(e) => setGuestName(e.target.value)} />
               </div>
               <div className="w-full sm:w-48">
-                <Select label="Status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
+                <Select
+                  label="Status"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setPage(1);
+                  }}
+                >
                   <option value="">All statuses</option>
-                  {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s.replace(/_/g, ' ')}
+                    </option>
+                  ))}
                 </Select>
               </div>
-              <SecondaryButton><Search className="h-4 w-4" /> Search</SecondaryButton>
+              <SecondaryButton>
+                <Search className="h-4 w-4" /> Search
+              </SecondaryButton>
             </form>
           </Card>
 
@@ -145,23 +168,36 @@ export function ReservationsPage() {
                           {r.bookingReference}
                         </Link>
                       </td>
-                      <td className="px-4 py-3">{r.guest.firstName} {r.guest.lastName}</td>
+                      <td className="px-4 py-3">
+                        {r.guest.firstName} {r.guest.lastName}
+                      </td>
                       <td className="px-4 py-3">{r.room.roomNumber}</td>
                       <td className="px-4 py-3">{r.checkInDate}</td>
                       <td className="px-4 py-3">{r.checkOutDate}</td>
                       <td className="px-4 py-3">{r.numberOfGuests}</td>
                       <td className="px-4 py-3">₹{r.totalAmount}</td>
-                      <td className="px-4 py-3"><BookingStatusBadge status={r.bookingStatus} /></td>
+                      <td className="px-4 py-3">
+                        <BookingStatusBadge status={r.bookingStatus} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-500">
-                <span>Page {page} of {totalPages}</span>
+                <span>
+                  Page {page} of {totalPages}
+                </span>
                 <div className="flex gap-2">
-                  <SecondaryButton onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Previous</SecondaryButton>
-                  <SecondaryButton onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Next</SecondaryButton>
+                  <SecondaryButton onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+                    Previous
+                  </SecondaryButton>
+                  <SecondaryButton
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                  >
+                    Next
+                  </SecondaryButton>
                 </div>
               </div>
             </Card>
@@ -172,10 +208,13 @@ export function ReservationsPage() {
       {showWizard && (
         <BookingWizard
           onClose={() => setShowWizard(false)}
-          onCreated={() => { setShowWizard(false); setPage(1); load(); }}
+          onCreated={() => {
+            setShowWizard(false);
+            setPage(1);
+            load();
+          }}
         />
       )}
     </div>
   );
 }
-

@@ -44,7 +44,9 @@ export function InvoicesPage() {
   return (
     <div>
       <PageHeader title="Invoices" subtitle="All issued invoices" />
-      {invoices.length === 0 && <EmptyState title="No invoices issued yet" description="Invoices are generated automatically at checkout." />}
+      {invoices.length === 0 && (
+        <EmptyState title="No invoices issued yet" description="Invoices are generated automatically at checkout." />
+      )}
       {invoices.length > 0 && (
         <Card className="overflow-x-auto p-0">
           <table className="w-full min-w-[600px] text-left text-sm">
@@ -63,7 +65,10 @@ export function InvoicesPage() {
                   <td className="px-4 py-3">{new Date(inv.issuedAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">₹{inv.total}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => setSelected(inv)} className="flex items-center gap-1 text-brand-600 hover:underline">
+                    <button
+                      onClick={() => setSelected(inv)}
+                      className="flex items-center gap-1 text-brand-600 hover:underline"
+                    >
                       <FileText className="h-4 w-4" /> View
                     </button>
                   </td>
@@ -84,7 +89,9 @@ function InvoiceDetail({ invoice, onBack }: { invoice: Invoice; onBack: () => vo
     <div>
       <div className="mb-4 flex items-center justify-between print:hidden">
         <SecondaryButton onClick={onBack}>Back to invoices</SecondaryButton>
-        <SecondaryButton onClick={() => window.print()}><Printer className="h-4 w-4" /> Print Invoice</SecondaryButton>
+        <SecondaryButton onClick={() => window.print()}>
+          <Printer className="h-4 w-4" /> Print Invoice
+        </SecondaryButton>
       </div>
 
       <Card className="mx-auto max-w-2xl print:border-none print:shadow-none">
@@ -104,24 +111,42 @@ function InvoiceDetail({ invoice, onBack }: { invoice: Invoice; onBack: () => vo
           <div className="mb-6 grid grid-cols-2 gap-6 text-sm">
             <div>
               <p className="mb-1 font-semibold text-slate-700">Guest</p>
-              <p>{reservation.guest.firstName} {reservation.guest.lastName}</p>
+              <p>
+                {reservation.guest.firstName} {reservation.guest.lastName}
+              </p>
               <p className="text-slate-500">{reservation.guest.phone}</p>
               {reservation.guest.email && <p className="text-slate-500">{reservation.guest.email}</p>}
             </div>
             <div>
               <p className="mb-1 font-semibold text-slate-700">Stay</p>
-              <p>Room {reservation.room.roomNumber} — {reservation.room.roomType.name}</p>
-              <p className="text-slate-500">{reservation.checkInDate} → {reservation.checkOutDate}</p>
+              <p>
+                Room {reservation.room.roomNumber} — {reservation.room.roomType.name}
+              </p>
+              <p className="text-slate-500">
+                {reservation.checkInDate} → {reservation.checkOutDate}
+              </p>
             </div>
           </div>
         )}
 
         <table className="mb-6 w-full text-sm">
           <tbody>
-            <tr className="border-b border-slate-100"><td className="py-2 text-slate-500">Subtotal</td><td className="py-2 text-right">₹{invoice.subtotal}</td></tr>
-            <tr className="border-b border-slate-100"><td className="py-2 text-slate-500">Tax</td><td className="py-2 text-right">₹{invoice.tax}</td></tr>
-            <tr className="border-b border-slate-100"><td className="py-2 text-slate-500">Discount</td><td className="py-2 text-right">− ₹{invoice.discount}</td></tr>
-            <tr><td className="py-2 font-semibold text-slate-800">Grand Total</td><td className="py-2 text-right text-lg font-bold text-slate-900">₹{invoice.total}</td></tr>
+            <tr className="border-b border-slate-100">
+              <td className="py-2 text-slate-500">Subtotal</td>
+              <td className="py-2 text-right">₹{invoice.subtotal}</td>
+            </tr>
+            <tr className="border-b border-slate-100">
+              <td className="py-2 text-slate-500">Tax</td>
+              <td className="py-2 text-right">₹{invoice.tax}</td>
+            </tr>
+            <tr className="border-b border-slate-100">
+              <td className="py-2 text-slate-500">Discount</td>
+              <td className="py-2 text-right">− ₹{invoice.discount}</td>
+            </tr>
+            <tr>
+              <td className="py-2 font-semibold text-slate-800">Grand Total</td>
+              <td className="py-2 text-right text-lg font-bold text-slate-900">₹{invoice.total}</td>
+            </tr>
           </tbody>
         </table>
 

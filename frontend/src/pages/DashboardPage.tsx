@@ -37,9 +37,7 @@ const COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#0891b2'
 function KpiCard({ icon, label, value }: { icon: JSX.Element; label: string; value: string | number }) {
   return (
     <Card className="flex items-center gap-4">
-      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-        {icon}
-      </div>
+      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-50 text-brand-600">{icon}</div>
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
         <p className="text-xl font-semibold text-slate-900">{value}</p>
@@ -93,7 +91,11 @@ export function DashboardPage() {
         <KpiCard icon={<DoorClosed className="h-5 w-5" />} label="Reserved" value={kpis.reservedRooms} />
         <KpiCard icon={<LogIn className="h-5 w-5" />} label="Today's Check-ins" value={kpis.todaysCheckIns} />
         <KpiCard icon={<LogOut className="h-5 w-5" />} label="Today's Check-outs" value={kpis.todaysCheckOuts} />
-        <KpiCard icon={<CalendarCheck className="h-5 w-5" />} label="Active Reservations" value={kpis.activeReservations} />
+        <KpiCard
+          icon={<CalendarCheck className="h-5 w-5" />}
+          label="Active Reservations"
+          value={kpis.activeReservations}
+        />
         <KpiCard icon={<Wallet className="h-5 w-5" />} label="Today's Revenue" value={`₹${kpis.todaysRevenue}`} />
         <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="ADR" value={`₹${kpis.adr ?? 0}`} />
         <KpiCard icon={<BarChart2 className="h-5 w-5" />} label="RevPAR" value={`₹${kpis.revpar ?? 0}`} />
@@ -200,8 +202,12 @@ export function DashboardPage() {
             {recentBookings.slice(0, 6).map((r) => (
               <li key={r.id} className="flex items-center justify-between py-2 text-sm">
                 <div>
-                  <p className="font-medium text-slate-800">{r.guest.firstName} {r.guest.lastName}</p>
-                  <p className="text-xs text-slate-500">{r.bookingReference} · Room {r.room.roomNumber}</p>
+                  <p className="font-medium text-slate-800">
+                    {r.guest.firstName} {r.guest.lastName}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {r.bookingReference} · Room {r.room.roomNumber}
+                  </p>
                 </div>
                 <BookingStatusBadge status={r.bookingStatus} />
               </li>
@@ -216,8 +222,8 @@ export function DashboardPage() {
             {upcomingCheckIns.slice(0, 3).map((r) => (
               <div key={r.id} className="flex items-center justify-between text-sm">
                 <span className="text-slate-700">
-                  <LogIn className="mr-1 inline h-3.5 w-3.5 text-green-600" /> {r.guest.firstName}{' '}
-                  {r.guest.lastName} — Room {r.room.roomNumber}
+                  <LogIn className="mr-1 inline h-3.5 w-3.5 text-green-600" /> {r.guest.firstName} {r.guest.lastName} —
+                  Room {r.room.roomNumber}
                 </span>
                 <span className="text-xs text-slate-500">{r.checkInDate}</span>
               </div>
@@ -225,8 +231,8 @@ export function DashboardPage() {
             {upcomingCheckOuts.slice(0, 3).map((r) => (
               <div key={r.id} className="flex items-center justify-between text-sm">
                 <span className="text-slate-700">
-                  <LogOut className="mr-1 inline h-3.5 w-3.5 text-orange-600" /> {r.guest.firstName}{' '}
-                  {r.guest.lastName} — Room {r.room.roomNumber}
+                  <LogOut className="mr-1 inline h-3.5 w-3.5 text-orange-600" /> {r.guest.firstName} {r.guest.lastName}{' '}
+                  — Room {r.room.roomNumber}
                 </span>
                 <span className="text-xs text-slate-500">{r.checkOutDate}</span>
               </div>

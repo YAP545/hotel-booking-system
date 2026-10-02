@@ -39,7 +39,11 @@ export function SettingsPage() {
       <PageHeader title="Hotel Settings" subtitle="Configure tax rate, cancellation policy, and check-in/out times" />
       <Card className="max-w-lg">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input label="Hotel name" value={form.hotelName} onChange={(e) => setForm({ ...form, hotelName: e.target.value })} />
+          <Input
+            label="Hotel name"
+            value={form.hotelName}
+            onChange={(e) => setForm({ ...form, hotelName: e.target.value })}
+          />
           <Input
             label="Tax percentage (%)"
             type="number"
@@ -61,10 +65,20 @@ export function SettingsPage() {
             onChange={(e) => setForm({ ...form, freeCancellationHours: parseInt(e.target.value, 10) })}
           />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Check-in time" value={form.checkInTime} onChange={(e) => setForm({ ...form, checkInTime: e.target.value })} />
-            <Input label="Check-out time" value={form.checkOutTime} onChange={(e) => setForm({ ...form, checkOutTime: e.target.value })} />
+            <Input
+              label="Check-in time"
+              value={form.checkInTime}
+              onChange={(e) => setForm({ ...form, checkInTime: e.target.value })}
+            />
+            <Input
+              label="Check-out time"
+              value={form.checkOutTime}
+              onChange={(e) => setForm({ ...form, checkOutTime: e.target.value })}
+            />
           </div>
-          <PrimaryButton type="submit" disabled={saving}>Save Settings</PrimaryButton>
+          <PrimaryButton type="submit" disabled={saving}>
+            Save Settings
+          </PrimaryButton>
         </form>
       </Card>
     </div>

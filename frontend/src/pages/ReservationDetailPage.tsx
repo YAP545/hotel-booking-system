@@ -1,18 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, LogIn, LogOut, XCircle, CreditCard, FileText, QrCode } from 'lucide-react';
 import { reservationsService } from '../services/reservations.service';
-import { paymentsService, invoicesService } from '../services/misc.service';
+import { paymentsService } from '../services/misc.service';
 import { Reservation, Payment, PaymentMethod } from '../types';
-import { Card, ErrorState, Input, LoadingState, PageHeader, PrimaryButton, SecondaryButton, Select } from '../components/ui';
+import {
+  Card,
+  ErrorState,
+  Input,
+  LoadingState,
+  PageHeader,
+  PrimaryButton,
+  SecondaryButton,
+  Select,
+} from '../components/ui';
 import { BookingStatusBadge, PaymentStatusBadge } from '../components/StatusBadges';
-import { Modal, ConfirmDialog } from '../components/Modal';
+import { Modal } from '../components/Modal';
 import { useToast } from '../context/ToastContext';
 import { apiErrorMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { initiateRazorpayPayment } from '../utils/razorpay';
 import { PaymentQrModal } from '../components/PaymentQrModal';
-
 
 export function ReservationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,15 +39,12 @@ export function ReservationDetailPage() {
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'RECEPTIONIST';
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
     try {
-      const [res, pays] = await Promise.all([
-        reservationsService.get(id),
-        paymentsService.byReservation(id),
-      ]);
+      const [res, pays] = await Promise.all([reservationsService.get(id), paymentsService.byReservation(id)]);
       setReservation(res);
       setPayments(pays);
     } catch (err) {
@@ -47,9 +52,12 @@ export function ReservationDetailPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [id, load]);
 
   async function handleCheckIn() {
     if (!id) return;
@@ -95,7 +103,10 @@ export function ReservationDetailPage() {
 
   return (
     <div>
-      <button onClick={() => navigate('/reservations')} className="mb-4 flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
+      <button
+        onClick={() => navigate('/reservations')}
+        className="mb-4 flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+      >
         <ArrowLeft className="h-4 w-4" /> Back to reservations
       </button>
 
@@ -110,11 +121,15 @@ export function ReservationDetailPage() {
           <h3 className="mb-3 text-sm font-semibold text-slate-700">Booking Details</h3>
           <div className="grid grid-cols-2 gap-y-2 text-sm">
             <span className="text-slate-500">Guest</span>
-            <span className="text-right font-medium text-slate-900">{reservation.guest.firstName} {reservation.guest.lastName}</span>
+            <span className="text-right font-medium text-slate-900">
+              {reservation.guest.firstName} {reservation.guest.lastName}
+            </span>
             <span className="text-slate-500">Phone</span>
             <span className="text-right">{reservation.guest.phone}</span>
             <span className="text-slate-500">Room</span>
-            <span className="text-right">{reservation.room.roomNumber} — {reservation.room.roomType.name}</span>
+            <span className="text-right">
+              {reservation.room.roomNumber} — {reservation.room.roomType.name}
+            </span>
             <span className="text-slate-500">Check-in</span>
             <span className="text-right">{reservation.checkInDate}</span>
             <span className="text-slate-500">Check-out</span>
@@ -151,10 +166,14 @@ export function ReservationDetailPage() {
           {canManage && (
             <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
               {reservation.bookingStatus === 'CONFIRMED' && (
-                <PrimaryButton onClick={handleCheckIn}><LogIn className="h-4 w-4" /> Check In</PrimaryButton>
+                <PrimaryButton onClick={handleCheckIn}>
+                  <LogIn className="h-4 w-4" /> Check In
+                </PrimaryButton>
               )}
               {reservation.bookingStatus === 'CHECKED_IN' && (
-                <PrimaryButton onClick={handleCheckOut}><LogOut className="h-4 w-4" /> Check Out</PrimaryButton>
+                <PrimaryButton onClick={handleCheckOut}>
+                  <LogOut className="h-4 w-4" /> Check Out
+                </PrimaryButton>
               )}
               {(reservation.bookingStatus === 'CONFIRMED' || reservation.bookingStatus === 'PENDING') && (
                 <SecondaryButton onClick={() => setShowCancel(true)} className="text-red-600 hover:bg-red-50">
@@ -166,14 +185,19 @@ export function ReservationDetailPage() {
                   <SecondaryButton onClick={() => setShowPayment(true)}>
                     <CreditCard className="h-4 w-4" /> Record Payment
                   </SecondaryButton>
-                  <SecondaryButton onClick={() => setShowQrModal(true)} className="border-brand-300 text-brand-700 hover:bg-brand-50">
+                  <SecondaryButton
+                    onClick={() => setShowQrModal(true)}
+                    className="border-brand-300 text-brand-700 hover:bg-brand-50"
+                  >
                     <QrCode className="h-4 w-4 text-brand-600" /> Pay via QR
                   </SecondaryButton>
                 </>
               )}
               {reservation.bookingStatus === 'CHECKED_OUT' && (
                 <Link to={`/invoices?reservationId=${reservation.id}`}>
-                  <SecondaryButton><FileText className="h-4 w-4" /> View Invoice</SecondaryButton>
+                  <SecondaryButton>
+                    <FileText className="h-4 w-4" /> View Invoice
+                  </SecondaryButton>
                 </Link>
               )}
             </div>
@@ -188,7 +212,9 @@ export function ReservationDetailPage() {
               <li key={p.id} className="flex items-center justify-between text-sm">
                 <div>
                   <p className="font-medium text-slate-800">₹{p.amount}</p>
-                  <p className="text-xs text-slate-500">{p.paymentMethod} · {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : '—'}</p>
+                  <p className="text-xs text-slate-500">
+                    {p.paymentMethod} · {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : '—'}
+                  </p>
                 </div>
                 <PaymentStatusBadge status={p.paymentStatus} />
               </li>
@@ -197,9 +223,7 @@ export function ReservationDetailPage() {
         </Card>
       </div>
 
-      {showCancel && (
-        <CancelBookingModal onClose={() => setShowCancel(false)} onConfirm={handleCancel} />
-      )}
+      {showCancel && <CancelBookingModal onClose={() => setShowCancel(false)} onConfirm={handleCancel} />}
       {showPayment && (
         <RecordPaymentModal
           reservationId={reservation.id}
@@ -209,7 +233,10 @@ export function ReservationDetailPage() {
           guestPhone={reservation.guest?.phone || ''}
           bookingReference={reservation.bookingReference}
           onClose={() => setShowPayment(false)}
-          onSaved={() => { setShowPayment(false); load(); }}
+          onSaved={() => {
+            setShowPayment(false);
+            load();
+          }}
         />
       )}
       {showQrModal && (
@@ -297,7 +324,14 @@ function RecordPaymentModal({
   return (
     <Modal title="Record Payment" onClose={onClose} widthClass="max-w-sm">
       <div className="space-y-4">
-        <Input label={`Amount (outstanding: ₹${outstanding.toFixed(2)})`} type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} disabled={method === 'RAZORPAY'} />
+        <Input
+          label={`Amount (outstanding: ₹${outstanding.toFixed(2)})`}
+          type="number"
+          step="0.01"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          disabled={method === 'RAZORPAY'}
+        />
         <Select label="Payment method" value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
           <option value="RAZORPAY">Razorpay (Online Payment)</option>
           <option value="CASH">Cash</option>
@@ -315,4 +349,3 @@ function RecordPaymentModal({
     </Modal>
   );
 }
-

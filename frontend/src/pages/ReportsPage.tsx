@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { BarChart2, Inbox } from 'lucide-react';
 import { reportsService } from '../services/misc.service';
@@ -19,17 +19,28 @@ function ChartEmptyState({ label }: { label: string }) {
   );
 }
 
-interface RevenueRow { date: string; total: string | number; }
-interface OccupancyRow { date: string; roomsBooked: number; occupancyRate: string | number; }
-interface CancellationRow { 
-  id: string; 
-  reservation?: { bookingReference: string }; 
-  reason?: string; 
-  refundAmount?: number; 
-  cancellationFee?: number; 
-  cancellationDate?: string; 
+interface RevenueRow {
+  date: string;
+  total: string | number;
 }
-interface PaymentSummaryRow { method: string; total: string | number; count: string | number; }
+interface OccupancyRow {
+  date: string;
+  roomsBooked: number;
+  occupancyRate: string | number;
+}
+interface CancellationRow {
+  id: string;
+  reservation?: { bookingReference: string };
+  reason?: string;
+  refundAmount?: number;
+  cancellationFee?: number;
+  cancellationDate?: string;
+}
+interface PaymentSummaryRow {
+  method: string;
+  total: string | number;
+  count: string | number;
+}
 
 export function ReportsPage() {
   const [fromDate, setFromDate] = useState(todayMinus(30));
@@ -41,7 +52,7 @@ export function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -60,9 +71,13 @@ export function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [fromDate, toDate]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- safe: async fetch on mount, no infinite loop
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: fetch once on mount; date filters applied via explicit "Apply" button click, not reactively
+  }, []);
 
   function exportRevenueCsv() {
     const rows = ['date,revenue', ...revenue.map((r) => `${r.date},${r.total}`)];
@@ -76,7 +91,10 @@ export function ReportsPage() {
   }
 
   function exportOccupancyCsv() {
-    const rows = ['date,rooms_booked,occupancy_rate_percent', ...occupancy.map((o) => `${o.date},${o.roomsBooked},${o.occupancyRate}`)];
+    const rows = [
+      'date,rooms_booked,occupancy_rate_percent',
+      ...occupancy.map((o) => `${o.date},${o.roomsBooked},${o.occupancyRate}`),
+    ];
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -87,7 +105,13 @@ export function ReportsPage() {
   }
 
   function exportCancellationsCsv() {
-    const rows = ['reservation_ref,reason,refund_amount,fee,date', ...cancellations.map((c) => `"${c.reservation?.bookingReference || ''}","${c.reason || ''}",${c.refundAmount},${c.cancellationFee},${c.cancellationDate}`)];
+    const rows = [
+      'reservation_ref,reason,refund_amount,fee,date',
+      ...cancellations.map(
+        (c) =>
+          `"${c.reservation?.bookingReference || ''}","${c.reason || ''}",${c.refundAmount},${c.cancellationFee},${c.cancellationDate}`,
+      ),
+    ];
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -122,9 +146,15 @@ export function ReportsPage() {
           <Input label="From" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           <Input label="To" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           <SecondaryButton onClick={load}>Apply</SecondaryButton>
-          <SecondaryButton onClick={exportRevenueCsv} disabled={!hasRevenueData}>Export Revenue CSV</SecondaryButton>
-          <SecondaryButton onClick={exportOccupancyCsv} disabled={!hasOccupancyData}>Export Occupancy CSV</SecondaryButton>
-          <SecondaryButton onClick={exportCancellationsCsv} disabled={!hasCancellations}>Export Cancellations CSV</SecondaryButton>
+          <SecondaryButton onClick={exportRevenueCsv} disabled={!hasRevenueData}>
+            Export Revenue CSV
+          </SecondaryButton>
+          <SecondaryButton onClick={exportOccupancyCsv} disabled={!hasOccupancyData}>
+            Export Occupancy CSV
+          </SecondaryButton>
+          <SecondaryButton onClick={exportCancellationsCsv} disabled={!hasCancellations}>
+            Export Cancellations CSV
+          </SecondaryButton>
         </div>
       </Card>
 
@@ -136,7 +166,8 @@ export function ReportsPage() {
           <Inbox className="mx-auto mb-3 h-10 w-10 text-slate-300" />
           <h3 className="text-base font-semibold text-slate-700">No report data found</h3>
           <p className="mt-1 text-sm text-slate-500">
-            No activity was recorded between <span className="font-medium">{fromDate}</span> and <span className="font-medium">{toDate}</span>. Try selecting a broader date range.
+            No activity was recorded between <span className="font-medium">{fromDate}</span> and{' '}
+            <span className="font-medium">{toDate}</span>. Try selecting a broader date range.
           </p>
         </Card>
       )}
@@ -177,11 +208,7 @@ export function ReportsPage() {
                     <BarChart data={occupancyData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" tickMargin={8} />
-                      <YAxis
-                        width={48}
-                        tick={{ fontSize: 11 }}
-                        tickFormatter={(v) => `${v}%`}
-                      />
+                      <YAxis width={48} tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
                       <Tooltip formatter={(value: any) => [`${value}%`, 'Occupancy']} />
                       <Bar dataKey="occupancyRate" fill="#16a34a" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -201,7 +228,9 @@ export function ReportsPage() {
                   {paymentSummary.map((p, i) => (
                     <li key={i} className="flex justify-between py-2">
                       <span>{p.method}</span>
-                      <span className="font-medium">{p.count} payments · ₹{p.total}</span>
+                      <span className="font-medium">
+                        {p.count} payments · ₹{p.total}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -219,12 +248,16 @@ export function ReportsPage() {
                   {cancellations.map((c) => (
                     <li key={c.id} className="py-2">
                       <p className="font-medium">{c.reservation?.bookingReference}</p>
-                      <p className="text-xs text-slate-500">{c.reason} · Refund ₹{c.refundAmount}</p>
+                      <p className="text-xs text-slate-500">
+                        {c.reason} · Refund ₹{c.refundAmount}
+                      </p>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <div className="py-6 text-center text-sm text-slate-400">No cancellations recorded in this date range.</div>
+                <div className="py-6 text-center text-sm text-slate-400">
+                  No cancellations recorded in this date range.
+                </div>
               )}
             </Card>
           </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { QrCode, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Modal } from './Modal';
@@ -30,33 +30,38 @@ export function PaymentQrModal({ reservation, onClose, onPaymentSuccess }: Payme
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'RECEPTIONIST';
 
-  async function generateFallbackUpiQr(amount: number) {
-    const vpa = import.meta.env.VITE_HOTEL_UPI_VPA;
-    if (!vpa) {
-      setQrImageUrl(null);
-      setIsFallback(true);
-      setFallbackMessage('Razorpay QR Code API is unavailable and no fallback HOTEL_UPI_VPA is configured in environment.');
-      return;
-    }
+  const generateFallbackUpiQr = useCallback(
+    async (amount: number) => {
+      const vpa = import.meta.env.VITE_HOTEL_UPI_VPA;
+      if (!vpa) {
+        setQrImageUrl(null);
+        setIsFallback(true);
+        setFallbackMessage(
+          'Razorpay QR Code API is unavailable and no fallback HOTEL_UPI_VPA is configured in environment.',
+        );
+        return;
+      }
 
-    try {
-      const hotelName = 'Grand Hotel';
-      const ref = reservation.bookingReference || reservation.id.slice(0, 8);
-      const upiUrl = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(hotelName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(ref)}`;
-      
-      const dataUrl = await QRCode.toDataURL(upiUrl, {
-        width: 250,
-        margin: 2,
-        color: { dark: '#0f172a', light: '#ffffff' },
-      });
-      setQrImageUrl(dataUrl);
-      setIsFallback(true);
-    } catch (err: any) {
-      setError('Failed to generate fallback UPI QR code.');
-    }
-  }
+      try {
+        const hotelName = 'Grand Hotel';
+        const ref = reservation.bookingReference || reservation.id.slice(0, 8);
+        const upiUrl = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(hotelName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(ref)}`;
 
-  async function initializeQr() {
+        const dataUrl = await QRCode.toDataURL(upiUrl, {
+          width: 250,
+          margin: 2,
+          color: { dark: '#0f172a', light: '#ffffff' },
+        });
+        setQrImageUrl(dataUrl);
+        setIsFallback(true);
+      } catch (err: any) {
+        setError('Failed to generate fallback UPI QR code.');
+      }
+    },
+    [reservation.bookingReference, reservation.id],
+  );
+
+  const initializeQr = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -64,7 +69,9 @@ export function PaymentQrModal({ reservation, onClose, onPaymentSuccess }: Payme
       setAmountToPay(res.amount || Number(reservation.totalAmount));
 
       if (res.fallback || !res.imageUrl) {
-        setFallbackMessage(res.message || 'Razorpay QR Code API is unavailable on this account. Displaying standard UPI QR.');
+        setFallbackMessage(
+          res.message || 'Razorpay QR Code API is unavailable on this account. Displaying standard UPI QR.',
+        );
         await generateFallbackUpiQr(res.amount || Number(reservation.totalAmount));
       } else {
         setQrImageUrl(res.imageUrl);
@@ -77,10 +84,11 @@ export function PaymentQrModal({ reservation, onClose, onPaymentSuccess }: Payme
     } finally {
       setLoading(false);
     }
-  }
+  }, [reservation.id, reservation.totalAmount, generateFallbackUpiQr]);
 
   // Poll payment status every 3 seconds until paid
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     initializeQr();
 
     const interval = setInterval(async () => {
@@ -140,7 +148,8 @@ export function PaymentQrModal({ reservation, onClose, onPaymentSuccess }: Payme
             </div>
             <h4 className="text-lg font-bold text-slate-900">Payment Complete!</h4>
             <p className="text-sm text-slate-500">
-              Payment of <span className="font-semibold text-slate-900">₹{amountToPay.toFixed(2)}</span> received for booking <span className="font-semibold text-brand-600">{reservation.bookingReference}</span>.
+              Payment of <span className="font-semibold text-slate-900">₹{amountToPay.toFixed(2)}</span> received for
+              booking <span className="font-semibold text-brand-600">{reservation.bookingReference}</span>.
             </p>
             <PrimaryButton onClick={onClose} className="mt-4 w-full">
               Close Window
@@ -177,7 +186,8 @@ export function PaymentQrModal({ reservation, onClose, onPaymentSuccess }: Payme
 
             {isFallback && import.meta.env.VITE_HOTEL_UPI_VPA && (
               <p className="text-xs text-slate-500">
-                Scan with any UPI App (GPay, PhonePe, Paytm) using VPA <span className="font-semibold text-slate-700">{import.meta.env.VITE_HOTEL_UPI_VPA}</span>.
+                Scan with any UPI App (GPay, PhonePe, Paytm) using VPA{' '}
+                <span className="font-semibold text-slate-700">{import.meta.env.VITE_HOTEL_UPI_VPA}</span>.
               </p>
             )}
 
